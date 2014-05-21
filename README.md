@@ -3,7 +3,7 @@ knockout-projections
 
 Knockout.js observable arrays get smarter.
 
-This plugin adds observable `map` and `filter` features to observable arrays, so you can transform collections in arbitrary ways and have the results automatically update whenever the underlying source data changes.
+This plugin adds observable `map`, `filter` and `sortBy` features to observable arrays, so you can transform collections in arbitrary ways and have the results automatically update whenever the underlying source data changes.
 
 Installation
 ============
@@ -27,17 +27,17 @@ More info to follow. For now, here's a simple example:
 There's a plain observable array. Now let's say we want to keep track of the squares of these values:
 
     var squares = sourceItems.map(function(x) { return x*x; });
-   
+
 Now `squares` is an observable array containing `[1, 4, 9, 16, 25]`. Let's modify the source data:
 
     sourceItems.push(6);
     // 'squares' has automatically updated and now contains [1, 4, 9, 16, 25, 36]
-    
+
 This works with any transformation of the source data, e.g.:
 
     sourceItems.reverse();
     // 'squares' now contains [36, 25, 16, 9, 4, 1]
-    
+
 The key point of this library is that these transformations are done *efficiently*. Specifically, your callback
 function that performs the mapping is only called when strictly necessary (usually, that's only for newly-added
 items). When you add new items to the source data, we *don't* need to re-map the existing ones. When you reorder
@@ -63,12 +63,51 @@ Again, your `filter` callbacks are only called when strictly necessary. Re-order
 require any refiltering - the output is simply updated to match. Only newly-added source items must be subjected
 to your `filter` callback.
 
+**Sorting**
+
+As well as `map` and `filter`, this plugin also provides `sortBy`:
+
+    var sortedEvenSquares.sortBy(function (evenSquare, descending) { return descending(evenSquare); });
+    // sortedEvenSquares now contains [100, 36, 16, 4]
+
+A more involved example:
+
+    function Person(name, yearOfBirth) {
+        this.name = ko.observable(name);
+        this.yearOfBirth = ko.observable(yearOfBirth);
+    }
+
+    var persons = [
+        new Person("Marilyn Monroe", 1926),
+        new Person("Abraham Lincoln", 1809),
+        new Person("Mother Teresa", 1910),
+        new Person("John F. Kennedy", 1917),
+        new Person("Martin Luther King", 1929),
+        new Person("Nelson Mandela", 1918),
+        new Person("Winston Churchill", 1874),
+        new Person("Bill Gates", 1955),
+        new Person("Muhammad Ali", 1942),
+        new Person("Mahatma Gandhi", 1869),
+    ];
+
+    // Persons sorted by name
+    var sortedByName = persons.sortBy(function (person) {
+        return person.name();
+    });
+
+    // Persons sorted by year of birth descending and then by name
+    var sortedByYearOfBirthDescendingAndThenName = persons.sortBy(function (person, descending) {
+        return [descending(person.yearOfBirth()), person.name()];
+    });
+
+The sorted list is only updated when items are added or removed and when properties that are sorted on changes.
+
 **Chaining**
 
-The above code also demonstrates that you can chain together successive `map` and `filter` transformations.
+The above code also demonstrates that you can chain together successive `map`, `filter` and `sortBy` transformations.
 
 When the underlying data changes, the effects will ripple out through the chain of computed arrays with the
-minimum necessary invocation of your `map` and `filter` callbacks.
+minimum necessary invocation of your `map`, `filter` and `sortBy` callbacks.
 
 How to build from source
 ========================
@@ -87,15 +126,15 @@ Third, use NPM to download all the dependencies for this module:
 Now you can build the package (linting and running tests along the way):
 
     grunt
-    
+
 Or you can just run the linting tool and tests:
 
     grunt test
-    
+
 Or you can make Grunt watch for changes to the sources/specs and auto-rebuild after each change:
-    
+
     grunt watch
-    
+
 The browser-ready output files will be dumped at the following locations:
 
  * `dist/knockout-projections.js`
@@ -108,7 +147,7 @@ Copyright (c) Microsoft Corporation
 
 All rights reserved.
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
 THIS CODE IS PROVIDED *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT.
 

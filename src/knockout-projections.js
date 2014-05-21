@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------
 Copyright (c) Microsoft Corporation
 All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 THIS CODE IS PROVIDED *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT.
 See the Apache Version 2.0 License for specific language governing permissions and limitations under the License.
 ------------------------------------------------------------------------------
@@ -292,6 +292,232 @@ See the Apache Version 2.0 License for specific language governing permissions a
         });
     }
 
+    // Sorting
+    function mappingToComparefn(mapping) {
+        return function (a, b) {
+            var aSortKeys = mapping(a, Descending.create);
+            var bSortKeys = mapping(b, Descending.create);
+
+            if (!Array.isArray(aSortKeys)) {
+                aSortKeys = [aSortKeys];
+                bSortKeys = [bSortKeys];
+            }
+
+            var aSortKey, bSortKey;
+
+            for (var i = 0; i < aSortKeys.length; i += 1) {
+                aSortKey = aSortKeys[i];
+                bSortKey = bSortKeys[i];
+                if (aSortKey instanceof Descending) {
+                    if (aSortKey.value > bSortKey.value) {
+                        return -1;
+                    } else if (aSortKey.value < bSortKey.value) {
+                        return 1;
+                    }
+                } else {
+                    if (aSortKey < bSortKey) {
+                        return -1;
+                    } else if (aSortKey > bSortKey) {
+                        return 1;
+                    }
+                }
+            }
+            return 0;
+        }
+    }
+
+    function binarySearch(items, item, comparefn) {
+        var left = -1,
+            right = items.length,
+            mid;
+
+        while (right - left > 1) {
+            mid = (left + right) >>> 1;
+            var c = comparefn(items[mid], item);
+            if (c < 0) {
+                left = mid;
+            } else {
+                right = mid;
+                if (!c) {
+                    break;
+                }
+            }
+        }
+        return (right === items.length || comparefn(items[right], item)) ? -right - 1 : right;
+    }
+
+    function findInsertionIndex(items, newItem, comparefn) {
+        var left = -1,
+            right = items.length,
+            mid;
+        while (right - left > 1) {
+            mid = (left + right) >>> 1;
+            if (comparefn(items[mid], newItem) < 0) {
+                left = mid;
+            } else {
+                right = mid;
+            }
+        }
+        return right;
+    }
+
+    function binaryIndexOf(items, item, comparefn) {
+        var index = binarySearch(items, item, comparefn);
+        if (index < 0 || items.length <= index || comparefn(items[index], item) !== 0) {
+            return -1;
+        } else {
+            var startIndex = index;
+            // find the first index of an item that looks like the item
+            while (index - 1 >= 0 && comparefn(items[index - 1], item) === 0) {
+                index -= 1;
+            }
+
+            // find the index of the item
+            while (index <= startIndex) {
+                if (items[index] === item) {
+                    return index;
+                }
+                index += 1;
+            }
+
+            while (index < items.length) {
+                if (comparefn(items[index], item) !== 0) {
+                    return -1;
+                }
+                if (items[index] === item) {
+                    return index;
+                }
+
+                index += 1;
+            }
+
+            return -1;
+        }
+    }
+
+    function insertOrRemoveItemsOnStructuralChange(ko, inputObservableArray, arrayOfState, outputArray, outputObservableArray, mappingOptions) {
+        var comparefn = mappingToComparefn(mappingOptions.mapping);
+        return inputObservableArray.subscribe(function(diff) {
+            if (!diff.length) {
+                return;
+            }
+
+            var addQueue = [];
+            var deleteQueue = [];
+            diff.forEach(function (diffEntry) {
+                if (typeof diffEntry.moved !== 'number') {
+                    switch (diffEntry.status) {
+                    case 'added':
+                        addQueue.push(diffEntry);
+                        break;
+                    case 'deleted':
+                        deleteQueue.push(diffEntry);
+                        break;
+                    }
+                }
+            });
+
+            deleteQueue.forEach(function (diffEntry) {
+                var index = binaryIndexOf(outputArray, diffEntry.value, comparefn);
+                if (index !== -1) {
+                    outputArray.splice(index, 1);
+                    arrayOfState[index].dispose();
+                    arrayOfState.splice(index, 1);
+                }
+            })
+
+            addQueue.forEach(function (diffEntry) {
+                var index = findInsertionIndex(outputArray, diffEntry.value, comparefn);
+                var stateItem = new SortedStateItem(ko, diffEntry.value, mappingOptions, arrayOfState, outputObservableArray);
+                outputArray.splice(index, 0, stateItem.inputItem);
+                arrayOfState.splice(index, 0, stateItem);
+            });
+
+            outputObservableArray.valueHasMutated();
+        }, null, 'arrayChange');
+    }
+
+    function SortedStateItem(ko, inputItem, mappingOptions, arrayOfState, outputObservableArray) {
+        this.inputItem = inputItem;
+        this.mappingOptions = mappingOptions;
+        this.arrayOfState = arrayOfState;
+        this.outputObservableArray = outputObservableArray;
+        this.outputArray = this.outputObservableArray.peek();
+
+        this.mappedValueComputed = ko.computed(this.mappingEvaluator, this);
+        this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
+        this.previousMappedValue = this.mappedValueComputed.peek();
+    }
+
+    SortedStateItem.prototype.dispose = StateItem.prototype.dispose;
+
+    function Descending(value) {
+        this.value = value;
+    }
+
+    Descending.create = function (value) {
+        return new Descending(value);
+    }
+
+    SortedStateItem.prototype.mappingEvaluator = function() {
+        return this.mappingOptions.mapping(this.inputItem, Descending.create);
+    };
+
+    SortedStateItem.prototype.onMappingResultChanged = function (newValue) {
+        if (newValue !== this.previousMappedValue) {
+            var oldIndex = binaryIndexOf(this.arrayOfState, this, mappingToComparefn(function (stateItem) {
+                return stateItem.previousMappedValue;
+            }));
+            this.outputArray.splice(oldIndex, 1);
+            this.arrayOfState.splice(oldIndex, 1);
+
+            var comparefn = mappingToComparefn(this.mappingOptions.mapping);
+            var index = findInsertionIndex(this.outputArray, this.inputItem, comparefn);
+            this.outputArray.splice(index, 0, this.inputItem);
+            this.arrayOfState.splice(index, 0, this);
+
+            this.previousMappedValue = newValue;
+        }
+    };
+
+    function observableArraySortBy(ko, mappingOptions) {
+        var inputObservableArray = this;
+
+        // Shorthand syntax - just pass a function instead of an options object
+        if (typeof mappingOptions === 'function') {
+            mappingOptions = { mapping: mappingOptions };
+        }
+
+        var comparefn = mappingToComparefn(mappingOptions.mapping);
+        var outputArray = [].concat(inputObservableArray.peek()).sort(comparefn);
+        var outputObservableArray = ko.observableArray(outputArray);
+
+        var arrayOfState = [];
+        for (var i = 0; i < outputArray.length; i += 1) {
+            arrayOfState[i] = new SortedStateItem(ko, outputArray[i], mappingOptions, arrayOfState, outputObservableArray);
+        }
+
+        // If the input array changes structurally (items added or removed), update the outputs
+        var inputArraySubscription = insertOrRemoveItemsOnStructuralChange(ko, inputObservableArray, arrayOfState, outputArray, outputObservableArray, mappingOptions);
+
+        // Return value is a readonly computed which can track its own changes to permit chaining.
+        // When disposed, it cleans up everything it created.
+        var returnValue = ko.computed(outputObservableArray).extend({ trackArrayChanges: true }),
+            originalDispose = returnValue.dispose;
+        returnValue.dispose = function() {
+            inputArraySubscription.dispose();
+            ko.utils.arrayForEach(arrayOfState, function(stateItem) {
+                stateItem.dispose();
+            });
+            originalDispose.call(this, arguments);
+        };
+
+        // Make projections chainable
+        addProjectionFunctions(ko, returnValue);
+
+        return returnValue;
+    }
+
     // Attaching projection functions
     // ------------------------------
     //
@@ -302,7 +528,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
     var projectionFunctionsCacheName = '_ko.projections.cache';
 
     function attachProjectionFunctionsCache(ko) {
-        // Wraps callback so that, when invoked, its arguments list is prefixed by 'ko' and 'this' 
+        // Wraps callback so that, when invoked, its arguments list is prefixed by 'ko' and 'this'
         function makeCaller(ko, callback) {
             return function() {
                 return callback.apply(this, [ko].concat(Array.prototype.slice.call(arguments, 0)));
@@ -310,6 +536,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         }
         ko[projectionFunctionsCacheName] = {
             map: makeCaller(ko, observableArrayMap),
+            sortBy: makeCaller(ko, observableArraySortBy),
             filter: makeCaller(ko, observableArrayFilter)
         };
     }
