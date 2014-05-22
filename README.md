@@ -10,8 +10,10 @@ Installation
 
 Download a copy of `knockout-projections-x.y.z.js` from [the `dist` directory](https://github.com/SteveSanderson/knockout-projections/tree/master/dist) and reference it in your web application:
 
-    <script src='knockout-x.y.z.js'></script>              <!-- First reference KO itself -->
-    <script src='knockout-projections-x.y.z.js'></script>  <!-- Then reference knockout-projections -->
+```html
+<script src='knockout-x.y.z.js'></script>              <!-- First reference KO itself -->
+<script src='knockout-projections-x.y.z.js'></script>  <!-- Then reference knockout-projections -->
+```
 
 Be sure to reference it *after* you reference Knockout itself, and of course replace `x.y.z` with the version number of the file you downloaded.
 
@@ -22,21 +24,27 @@ Usage
 
 More info to follow. For now, here's a simple example:
 
-    var sourceItems = ko.observableArray([1, 2, 3, 4, 5]);
+```js
+var sourceItems = ko.observableArray([1, 2, 3, 4, 5]);
+```
 
 There's a plain observable array. Now let's say we want to keep track of the squares of these values:
 
-    var squares = sourceItems.map(function(x) { return x*x; });
+var squares = sourceItems.map(function(x) { return x*x; });
 
 Now `squares` is an observable array containing `[1, 4, 9, 16, 25]`. Let's modify the source data:
 
-    sourceItems.push(6);
-    // 'squares' has automatically updated and now contains [1, 4, 9, 16, 25, 36]
+```js
+sourceItems.push(6);
+// 'squares' has automatically updated and now contains [1, 4, 9, 16, 25, 36]
+```
 
 This works with any transformation of the source data, e.g.:
 
-    sourceItems.reverse();
-    // 'squares' now contains [36, 25, 16, 9, 4, 1]
+```js
+sourceItems.reverse();
+// 'squares' now contains [36, 25, 16, 9, 4, 1]
+```
 
 The key point of this library is that these transformations are done *efficiently*. Specifically, your callback
 function that performs the mapping is only called when strictly necessary (usually, that's only for newly-added
@@ -50,14 +58,16 @@ graphs of custom objects, it can be important to perform each mapping update wit
 
 As well as `map`, this plugin also provides `filter`:
 
-    var evenSquares = squares.filter(function(x) { return x % 2 === 0; });
-    // evenSquares is now an observable containing [36, 16, 4]
+```js
+var evenSquares = squares.filter(function(x) { return x % 2 === 0; });
+// evenSquares is now an observable containing [36, 16, 4]
 
-    sourceItems.push(9);
-    // This has no effect on evenSquares, because 9*9=81 is odd
+sourceItems.push(9);
+// This has no effect on evenSquares, because 9*9=81 is odd
 
-    sourceItems.push(10);
-    // evenSquares now contains [36, 16, 4, 100]
+sourceItems.push(10);
+// evenSquares now contains [36, 16, 4, 100]
+```
 
 Again, your `filter` callbacks are only called when strictly necessary. Re-ordering or deleting source items don't
 require any refiltering - the output is simply updated to match. Only newly-added source items must be subjected
@@ -67,38 +77,42 @@ to your `filter` callback.
 
 As well as `map` and `filter`, this plugin also provides `sortBy`:
 
-    var sortedEvenSquares.sortBy(function (evenSquare, descending) { return descending(evenSquare); });
-    // sortedEvenSquares now contains [100, 36, 16, 4]
+```js
+var sortedEvenSquares.sortBy(function (evenSquare, descending) { return descending(evenSquare); });
+// sortedEvenSquares now contains [100, 36, 16, 4]
+```
 
 A more involved example:
 
-    function Person(name, yearOfBirth) {
-        this.name = ko.observable(name);
-        this.yearOfBirth = ko.observable(yearOfBirth);
-    }
+```js
+function Person(name, yearOfBirth) {
+    this.name = ko.observable(name);
+    this.yearOfBirth = ko.observable(yearOfBirth);
+}
 
-    var persons = [
-        new Person("Marilyn Monroe", 1926),
-        new Person("Abraham Lincoln", 1809),
-        new Person("Mother Teresa", 1910),
-        new Person("John F. Kennedy", 1917),
-        new Person("Martin Luther King", 1929),
-        new Person("Nelson Mandela", 1918),
-        new Person("Winston Churchill", 1874),
-        new Person("Bill Gates", 1955),
-        new Person("Muhammad Ali", 1942),
-        new Person("Mahatma Gandhi", 1869),
-    ];
+var persons = [
+    new Person("Marilyn Monroe", 1926),
+    new Person("Abraham Lincoln", 1809),
+    new Person("Mother Teresa", 1910),
+    new Person("John F. Kennedy", 1917),
+    new Person("Martin Luther King", 1929),
+    new Person("Nelson Mandela", 1918),
+    new Person("Winston Churchill", 1874),
+    new Person("Bill Gates", 1955),
+    new Person("Muhammad Ali", 1942),
+    new Person("Mahatma Gandhi", 1869),
+];
 
-    // Persons sorted by name
-    var sortedByName = persons.sortBy(function (person) {
-        return person.name();
-    });
+// Persons sorted by name
+var sortedByName = persons.sortBy(function (person) {
+    return person.name();
+});
 
-    // Persons sorted by year of birth descending and then by name
-    var sortedByYearOfBirthDescendingAndThenName = persons.sortBy(function (person, descending) {
-        return [descending(person.yearOfBirth()), person.name()];
-    });
+// Persons sorted by year of birth descending and then by name
+var sortedByYearOfBirthDescendingAndThenName = persons.sortBy(function (person, descending) {
+    return [descending(person.yearOfBirth()), person.name()];
+});
+```
 
 The sorted list is only updated when items are added or removed and when properties that are sorted on changes.
 
