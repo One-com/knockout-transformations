@@ -11,8 +11,10 @@ Installation
 Download a copy of `knockout-projections-x.y.z.js` from [the `dist` directory](https://github.com/SteveSanderson/knockout-projections/tree/master/dist) and reference it in your web application:
 
 ```html
-<script src='knockout-x.y.z.js'></script>              <!-- First reference KO itself -->
-<script src='knockout-projections-x.y.z.js'></script>  <!-- Then reference knockout-projections -->
+<!-- First reference KO itself -->
+<script src='knockout-x.y.z.js'></script>
+<!-- Then reference knockout-projections -->
+<script src='knockout-projections-x.y.z.js'></script>
 ```
 
 Be sure to reference it *after* you reference Knockout itself, and of course replace `x.y.z` with the version number of the file you downloaded.
@@ -78,7 +80,9 @@ to your `filter` callback.
 As well as `map` and `filter`, this plugin also provides `sortBy`:
 
 ```js
-var sortedEvenSquares.sortBy(function (evenSquare, descending) { return descending(evenSquare); });
+var sortedEvenSquares.sortBy(function (evenSquare, descending) {
+    return descending(evenSquare);
+});
 // sortedEvenSquares now contains [100, 36, 16, 4]
 ```
 
@@ -109,7 +113,7 @@ var sortedByName = persons.sortBy(function (person) {
 });
 
 // Persons sorted by year of birth descending and then by name
-var sortedByYearOfBirthDescendingAndThenName = persons.sortBy(function (person, descending) {
+var sortedByYearOfBirthAndThenName = persons.sortBy(function (person, descending) {
     return [descending(person.yearOfBirth()), person.name()];
 });
 ```
