@@ -404,7 +404,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
             var addQueue = [];
             var deleteQueue = [];
-            diff.forEach(function (diffEntry) {
+            ko.utils.arrayForEach(diff, function (diffEntry) {
                 if (typeof diffEntry.moved !== 'number') {
                     switch (diffEntry.status) {
                     case 'added':
@@ -417,7 +417,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 }
             });
 
-            deleteQueue.forEach(function (diffEntry) {
+            ko.utils.arrayForEach(deleteQueue, function (diffEntry) {
                 var index = binaryIndexOf(outputArray, diffEntry.value, comparefn);
                 if (index !== -1) {
                     outputArray.splice(index, 1);
@@ -426,7 +426,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 }
             })
 
-            addQueue.forEach(function (diffEntry) {
+            ko.utils.arrayForEach(addQueue, function (diffEntry) {
                 var index = findInsertionIndex(outputArray, diffEntry.value, comparefn);
                 var stateItem = new SortedStateItem(ko, diffEntry.value, mappingOptions, arrayOfState, outputObservableArray);
                 outputArray.splice(index, 0, stateItem.inputItem);
