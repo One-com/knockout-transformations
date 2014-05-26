@@ -16,7 +16,7 @@
             });
 
             it('results in an empty array', function () {
-                expect(sourceArray()).toEqual([]);
+                expect(sortedArray()).toEqual([]);
             });
         });
 
