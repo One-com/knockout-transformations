@@ -11,6 +11,18 @@ See the Apache Version 2.0 License for specific language governing permissions a
 (function(global, undefined) {
     'use strict';
 
+    function extend(obj) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        args.forEach(function (source) {
+            if (source) {
+                for (var prop in source) {
+                    obj[prop] = source[prop];
+                }
+            }
+        });
+        return obj;
+    };
+
     var exclusionMarker = {};
 
     function StateItem(ko, inputItem, initialStateArrayIndex, initialOutputArrayIndex, mappingOptions, arrayOfState, outputObservableArray) {
@@ -518,6 +530,272 @@ See the Apache Version 2.0 License for specific language governing permissions a
         return returnValue;
     }
 
+    function IndexByProjection(ko, inputObservableArray, options) {
+        var that = this;
+        this.ko = ko;
+        this.options = options;
+        this.outputObservable = ko.observable({});
+        this.stateItems = {};
+
+        var mapping = this.mapping = options.mapping;
+
+        var inputArray = inputObservableArray.peek();
+        for (var i = 0; i < inputArray.length; i += 1) {
+            this.addToIndex(inputArray[i], i);
+        }
+
+        // If the input array changes structurally (items added or removed), update the outputs
+        var inputArraySubscription = inputObservableArray.subscribe(this.onStructuralChange, this, 'arrayChange');
+
+        // Return value is a readonly, when disposed, it cleans up everything it created.
+        this.output = ko.computed(this.outputObservable);
+        var originalDispose = this.output.dispose;
+        this.output.dispose = function() {
+            inputArraySubscription.dispose();
+            for (var prop in stateItems) {
+                if (stateItems.hasOwnProperty(prop)) {
+                    stateItems[prop].dispose();
+                }
+            }
+            originalDispose.call(this, arguments);
+        };
+    };
+
+    IndexByProjection.prototype.appendToEntry = function (obj, key, item) {
+        var entry = obj[key];
+        if (!entry) {
+            entry = obj[key] = [];
+        }
+        entry.push(item);
+    }
+
+    IndexByProjection.prototype.removeFromEntry = function (obj, key, item) {
+        var entry = obj[key];
+        if (entry) {
+            var index = entry.indexOf(item);
+            if (index !== -1) {
+                if (entry.length === 1) {
+                    delete obj[key];
+                } else {
+                    entry.splice(index, 1);
+                }
+            }
+        }
+    }
+
+    IndexByProjection.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
+        this.appendToEntry(indexMapping, key, item);
+    };
+
+    IndexByProjection.prototype.removeByKeyAndItem = function (indexMapping, key, item) {
+        this.removeFromEntry(indexMapping, key, item);
+    };
+
+    IndexByProjection.prototype.addStateItemToIndex = function (stateItem) {
+        var key = this.mapping(stateItem.inputItem);
+        this.appendToEntry(this.stateItems, key, stateItem);
+    };
+
+    IndexByProjection.prototype.findStateItem = function (inputItem) {
+        var ko = this.ko;
+        var key = this.mapping(inputItem);
+        var entry = this.stateItems[key];
+        if (!entry) {
+            return null;
+        }
+
+        var result = ko.utils.arrayFilter(entry, function (stateItem) {
+            return stateItem.inputItem === inputItem;
+        });
+        return result[0] || null;
+    };
+
+    IndexByProjection.prototype.removeStateItem = function (stateItem) {
+        var key = stateItem.mappedValueComputed();
+        this.removeFromEntry(this.stateItems, key, stateItem);
+        stateItem.dispose();
+    };
+
+    IndexByProjection.prototype.addToIndex = function (inputItem) {
+        var key = this.mapping(inputItem);
+        var output = this.outputObservable.peek();
+        this.insertByKeyAndItem(output, key, inputItem);
+        var stateItem = new IndexedStateItem(this, inputItem);
+        this.addStateItemToIndex(stateItem);
+    };
+
+    IndexByProjection.prototype.removeItem = function (inputItem) {
+        var stateItem = this.findStateItem(inputItem);
+        if (stateItem) {
+            var key = stateItem.mappedValueComputed();
+            var output = this.outputObservable.peek();
+            this.removeByKeyAndItem(output, key, inputItem);
+            this.removeStateItem(stateItem);
+        }
+    };
+
+    IndexByProjection.prototype.onStructuralChange = function (diff) {
+        var that = this;
+        if (!diff.length) {
+            return;
+        }
+        var ko = this.ko;
+
+        var addQueue = [];
+        var deleteQueue = [];
+        var moveQueue = [];
+        ko.utils.arrayForEach(diff, function (diffEntry) {
+            if (typeof diffEntry.moved !== 'number') {
+                switch (diffEntry.status) {
+                case 'added':
+                    addQueue.push(diffEntry);
+                    break;
+                case 'deleted':
+                    deleteQueue.push(diffEntry);
+                    break;
+                }
+            }
+        });
+
+        ko.utils.arrayForEach(deleteQueue, function (diffEntry) {
+            that.removeItem(diffEntry.value, diffEntry.index);
+        });
+
+        ko.utils.arrayForEach(addQueue, function (diffEntry) {
+            that.addToIndex(diffEntry.value, diffEntry.index);
+        });
+
+        this.outputObservable.valueHasMutated();
+    };
+
+    function IndexedStateItem(projection, inputItem) {
+        this.projection = projection;
+        this.inputItem = inputItem;
+        this.mappedValueComputed = projection.ko.computed(this.mappingEvaluator, this);
+        this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
+        this.previousMappedValue = this.mappedValueComputed.peek();
+    }
+
+    IndexedStateItem.prototype.dispose = function () {
+        var mappedItem = this.mappedValueComputed();
+        this.mappedValueComputed.dispose();
+
+        if (this.projection.options.disposeItem) {
+            this.projection.options.disposeItem(mappedItem);
+        }
+    };
+
+    IndexedStateItem.prototype.mappingEvaluator = function() {
+        return this.projection.mapping(this.inputItem);
+    };
+
+    IndexedStateItem.prototype.onMappingResultChanged = function (newValue) {
+        if (newValue !== this.previousMappedValue) {
+            var projection = this.projection;
+            var output = projection.outputObservable.peek();
+            projection.removeByKeyAndItem(output, this.previousMappedValue, this.inputItem);
+            projection.removeByKeyAndItem(projection.stateItems, this.previousMappedValue, this);
+            projection.insertByKeyAndItem(output, newValue, this.inputItem);
+            projection.addStateItemToIndex(this);
+            this.previousMappedValue = newValue;
+        }
+    };
+
+    function UniqueIndexByProjection(ko, inputObservableArray, options) {
+        IndexByProjection.call(this, ko, inputObservableArray, options);
+    }
+
+    extend(UniqueIndexByProjection.prototype, IndexByProjection.prototype);
+
+    // Indexing
+    UniqueIndexByProjection.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
+        indexMapping[key] = item;
+    };
+
+    UniqueIndexByProjection.prototype.removeByKeyAndItem = function (indexMapping, key) {
+        delete indexMapping[key];
+    };
+
+    UniqueIndexByProjection.prototype.addStateItemToIndex = function (stateItem) {
+        var key = stateItem.mappedValueComputed();
+        if (key in this.stateItems) {
+            this.stateItems[key].dispose();
+        }
+        this.stateItems[key] = stateItem;
+    };
+
+    UniqueIndexByProjection.prototype.findStateItem = function (inputItem) {
+        var key = this.mapping(inputItem);
+        return this.stateItems[key] || null;
+    };
+
+    UniqueIndexByProjection.prototype.removeStateItem = function (stateItem) {
+        var key = stateItem.mappedValueComputed();
+        if (this.stateItems[key] === stateItem) {
+            delete this.stateItems[key];
+        }
+        stateItem.dispose();
+    };
+
+    UniqueIndexByProjection.prototype.addToIndex = function (inputItem) {
+        var key = this.mapping(inputItem);
+        var output = this.outputObservable.peek();
+        var stateItem = this.findStateItem(inputItem);
+        if (stateItem) {
+            stateItem.count += 1;
+        } else {
+            this.insertByKeyAndItem(output, key, inputItem);
+            stateItem = new UniquelyIndexedStateItem(this, inputItem);
+            this.addStateItemToIndex(stateItem);
+        }
+    };
+
+    UniqueIndexByProjection.prototype.removeItem = function (inputItem) {
+        var stateItem = this.findStateItem(inputItem);
+        if (stateItem) {
+            if (stateItem.count > 1) {
+                stateItem.count -= 1;
+            } else {
+                var key = stateItem.mappedValueComputed();
+                var output = this.outputObservable.peek();
+                this.removeByKeyAndItem(output, key, inputItem);
+                this.removeStateItem(stateItem);
+            }
+        }
+    };
+
+    function UniquelyIndexedStateItem(projection, inputItem) {
+        IndexedStateItem.call(this, projection, inputItem);
+        this.count = 1;
+    }
+
+    extend(UniquelyIndexedStateItem.prototype, IndexedStateItem.prototype);
+
+    function observableArrayIndexBy(ko, options) {
+        // Shorthand syntax - just pass a function instead of an options object
+        if (typeof options === 'function') {
+            options = { mapping: options, unique: false };
+        }
+
+        var projection = options.unique ?
+            new UniqueIndexByProjection(ko, this, options):
+            new IndexByProjection(ko, this, options);
+
+        return projection.output;
+    }
+
+    function observableArrayUniquelyIndexBy(ko, options) {
+        // Shorthand syntax - just pass a function instead of an options object
+        if (typeof options === 'function') {
+            options = { mapping: options };
+        }
+        options.unique = true;
+
+        var projection = new UniqueIndexByProjection(ko, this, options);
+
+        return projection.output;
+    }
+
     // Attaching projection functions
     // ------------------------------
     //
@@ -537,6 +815,8 @@ See the Apache Version 2.0 License for specific language governing permissions a
         ko[projectionFunctionsCacheName] = {
             map: makeCaller(ko, observableArrayMap),
             sortBy: makeCaller(ko, observableArraySortBy),
+            indexBy: makeCaller(ko, observableArrayIndexBy),
+            uniquelyIndexBy: makeCaller(ko, observableArrayUniquelyIndexBy),
             filter: makeCaller(ko, observableArrayFilter)
         };
     }

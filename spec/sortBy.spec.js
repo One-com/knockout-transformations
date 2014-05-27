@@ -158,6 +158,10 @@
                 this.yearOfBirth = ko.observable(yearOfBirth);
             }
 
+            Person.prototype.jasmineToString = function () {
+                return this.inspect();
+            };
+
             Person.prototype.inspect = function () {
                 return this.yearOfBirth() + ' ' + this.name();
             };
