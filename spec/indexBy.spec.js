@@ -278,7 +278,7 @@
             beforeEach(function () {
                 sampleData = ['Beta', 'Beta', 'Gamma', 'Alpha'];
                 sourceArray = ko.observableArray(sampleData);
-                indexedData = sourceArray.uniquelyIndexBy(function (item) {
+                indexedData = sourceArray.uniqueIndexBy(function (item) {
                     return item;
                 })();
             });
@@ -426,7 +426,7 @@
                 });
 
                 sourceArray = ko.observableArray(sampleData);
-                indexedData = sourceArray.uniquelyIndexBy(function(person) {
+                indexedData = sourceArray.uniqueIndexBy(function(person) {
                     return person.name();
                 })();
             });

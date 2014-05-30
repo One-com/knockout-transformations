@@ -745,7 +745,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
             stateItem.count += 1;
         } else {
             this.insertByKeyAndItem(output, key, inputItem);
-            stateItem = new UniquelyIndexedStateItem(this, inputItem);
+            stateItem = new UniqueIndexedStateItem(this, inputItem);
             this.addStateItemToIndex(stateItem);
         }
     };
@@ -764,12 +764,12 @@ See the Apache Version 2.0 License for specific language governing permissions a
         }
     };
 
-    function UniquelyIndexedStateItem(projection, inputItem) {
+    function UniqueIndexedStateItem(projection, inputItem) {
         IndexedStateItem.call(this, projection, inputItem);
         this.count = 1;
     }
 
-    extend(UniquelyIndexedStateItem.prototype, IndexedStateItem.prototype);
+    extend(UniqueIndexedStateItem.prototype, IndexedStateItem.prototype);
 
     function observableArrayIndexBy(ko, options) {
         // Shorthand syntax - just pass a function instead of an options object
@@ -784,7 +784,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         return projection.output;
     }
 
-    function observableArrayUniquelyIndexBy(ko, options) {
+    function observableArrayUniqueIndexBy(ko, options) {
         // Shorthand syntax - just pass a function instead of an options object
         if (typeof options === 'function') {
             options = { mapping: options };
@@ -816,7 +816,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
             map: makeCaller(ko, observableArrayMap),
             sortBy: makeCaller(ko, observableArraySortBy),
             indexBy: makeCaller(ko, observableArrayIndexBy),
-            uniquelyIndexBy: makeCaller(ko, observableArrayUniquelyIndexBy),
+            uniqueIndexBy: makeCaller(ko, observableArrayUniqueIndexBy),
             filter: makeCaller(ko, observableArrayFilter)
         };
     }
