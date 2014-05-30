@@ -306,6 +306,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
     // Sorting
     function mappingToComparefn(mapping) {
+        var Descending = SortByProjection.Descending;
         return function (a, b) {
             var aSortKeys = mapping(a, Descending.create);
             var bSortKeys = mapping(b, Descending.create);
@@ -407,128 +408,154 @@ See the Apache Version 2.0 License for specific language governing permissions a
         }
     }
 
-    function insertOrRemoveItemsOnStructuralChange(ko, inputObservableArray, arrayOfState, outputArray, outputObservableArray, mappingOptions) {
-        var comparefn = mappingToComparefn(mappingOptions.mapping);
-        return inputObservableArray.subscribe(function(diff) {
-            if (!diff.length) {
-                return;
-            }
-
-            var addQueue = [];
-            var deleteQueue = [];
-            ko.utils.arrayForEach(diff, function (diffEntry) {
-                if (typeof diffEntry.moved !== 'number') {
-                    switch (diffEntry.status) {
-                    case 'added':
-                        addQueue.push(diffEntry);
-                        break;
-                    case 'deleted':
-                        deleteQueue.push(diffEntry);
-                        break;
-                    }
-                }
-            });
-
-            ko.utils.arrayForEach(deleteQueue, function (diffEntry) {
-                var index = binaryIndexOf(outputArray, diffEntry.value, comparefn);
-                if (index !== -1) {
-                    outputArray.splice(index, 1);
-                    arrayOfState[index].dispose();
-                    arrayOfState.splice(index, 1);
-                }
-            })
-
-            ko.utils.arrayForEach(addQueue, function (diffEntry) {
-                var index = findInsertionIndex(outputArray, diffEntry.value, comparefn);
-                var stateItem = new SortedStateItem(ko, diffEntry.value, mappingOptions, arrayOfState, outputObservableArray);
-                outputArray.splice(index, 0, stateItem.inputItem);
-                arrayOfState.splice(index, 0, stateItem);
-            });
-
-            outputObservableArray.valueHasMutated();
-        }, null, 'arrayChange');
-    }
-
-    function SortedStateItem(ko, inputItem, mappingOptions, arrayOfState, outputObservableArray) {
+    function SortedStateItem(projection, inputItem) {
+        var ko = projection.ko;
+        this.projection = projection;
         this.inputItem = inputItem;
-        this.mappingOptions = mappingOptions;
-        this.arrayOfState = arrayOfState;
-        this.outputObservableArray = outputObservableArray;
-        this.outputArray = this.outputObservableArray.peek();
 
         this.mappedValueComputed = ko.computed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
 
-    SortedStateItem.prototype.dispose = StateItem.prototype.dispose;
-
-    function Descending(value) {
-        this.value = value;
-    }
-
-    Descending.create = function (value) {
-        return new Descending(value);
-    }
+    SortedStateItem.prototype.dispose = function() {
+        var mappedItem = this.mappedValueComputed();
+        this.mappedValueComputed.dispose();
+        if (this.projection.options.disposeItem) {
+            this.projection.options.disposeItem(mappedItem);
+        }
+    };
 
     SortedStateItem.prototype.mappingEvaluator = function() {
-        return this.mappingOptions.mapping(this.inputItem, Descending.create);
+        return this.projection.mapping(this.inputItem, SortByProjection.Descending.create);
     };
 
     SortedStateItem.prototype.onMappingResultChanged = function (newValue) {
         if (newValue !== this.previousMappedValue) {
-            var oldIndex = binaryIndexOf(this.arrayOfState, this, mappingToComparefn(function (stateItem) {
+            var projection = this.projection;
+            var outputArray = projection.outputObservable.peek();
+            var stateItems = projection.stateItems;
+            var oldIndex = binaryIndexOf(stateItems, this, mappingToComparefn(function (stateItem) {
                 return stateItem.previousMappedValue;
             }));
-            this.outputArray.splice(oldIndex, 1);
-            this.arrayOfState.splice(oldIndex, 1);
+            outputArray.splice(oldIndex, 1);
+            stateItems.splice(oldIndex, 1);
 
-            var comparefn = mappingToComparefn(this.mappingOptions.mapping);
-            var index = findInsertionIndex(this.outputArray, this.inputItem, comparefn);
-            this.outputArray.splice(index, 0, this.inputItem);
-            this.arrayOfState.splice(index, 0, this);
+            var index = findInsertionIndex(outputArray, this.inputItem, projection.comparefn);
+            outputArray.splice(index, 0, this.inputItem);
+            stateItems.splice(index, 0, this);
 
             this.previousMappedValue = newValue;
         }
     };
 
-    function observableArraySortBy(ko, mappingOptions) {
-        var inputObservableArray = this;
+    function SortByProjection(ko, inputObservableArray, options) {
+        var that = this;
+        this.ko = ko;
+        this.options = options;
 
-        // Shorthand syntax - just pass a function instead of an options object
-        if (typeof mappingOptions === 'function') {
-            mappingOptions = { mapping: mappingOptions };
-        }
+        this.mapping = options.mapping;
+        this.comparefn = mappingToComparefn(this.mapping);
+        this.outputObservable = ko.observable([].concat(inputObservableArray.peek()).sort(this.comparefn));
 
-        var comparefn = mappingToComparefn(mappingOptions.mapping);
-        var outputArray = [].concat(inputObservableArray.peek()).sort(comparefn);
-        var outputObservableArray = ko.observableArray(outputArray);
-
-        var arrayOfState = [];
-        for (var i = 0; i < outputArray.length; i += 1) {
-            arrayOfState[i] = new SortedStateItem(ko, outputArray[i], mappingOptions, arrayOfState, outputObservableArray);
-        }
+        this.stateItems = ko.utils.arrayMap(this.outputObservable.peek(), function (inputItem) {
+            return new SortedStateItem(that, inputItem);
+        });
 
         // If the input array changes structurally (items added or removed), update the outputs
-        var inputArraySubscription = insertOrRemoveItemsOnStructuralChange(ko, inputObservableArray, arrayOfState, outputArray, outputObservableArray, mappingOptions);
+        var inputArraySubscription = inputObservableArray.subscribe(this.onStructuralChange, this, 'arrayChange');
 
         // Return value is a readonly computed which can track its own changes to permit chaining.
         // When disposed, it cleans up everything it created.
-        var returnValue = ko.computed(outputObservableArray).extend({ trackArrayChanges: true }),
-            originalDispose = returnValue.dispose;
-        returnValue.dispose = function() {
+        this.output = ko.computed(this.outputObservable).extend({ trackArrayChanges: true });
+        var originalDispose = this.output.dispose;
+        this.output.dispose = function() {
             inputArraySubscription.dispose();
-            ko.utils.arrayForEach(arrayOfState, function(stateItem) {
+            ko.utils.arrayForEach(stateItems, function(stateItem) {
                 stateItem.dispose();
             });
             originalDispose.call(this, arguments);
         };
 
         // Make projections chainable
-        addProjectionFunctions(ko, returnValue);
-
-        return returnValue;
+        addProjectionFunctions(ko, this.output);
     }
+
+    SortByProjection.Descending = function Descending(value) {
+        this.value = value;
+    }
+
+    SortByProjection.Descending.create = function (value) {
+        return new SortByProjection.Descending(value);
+    }
+
+    SortByProjection.prototype.onStructuralChange = function (diff) {
+        if (!diff.length) {
+            return;
+        }
+
+        var that = this;
+        var ko = this.ko;
+        var addQueue = [];
+        var deleteQueue = [];
+        ko.utils.arrayForEach(diff, function (diffEntry) {
+            if (typeof diffEntry.moved !== 'number') {
+                switch (diffEntry.status) {
+                case 'added':
+                    addQueue.push(diffEntry);
+                    break;
+                case 'deleted':
+                    deleteQueue.push(diffEntry);
+                    break;
+                }
+            }
+        });
+
+        var outputArray = this.outputObservable.peek();
+        ko.utils.arrayForEach(deleteQueue, function (diffEntry) {
+            var index = binaryIndexOf(outputArray, diffEntry.value, that.comparefn);
+            if (index !== -1) {
+                outputArray.splice(index, 1);
+                that.stateItems[index].dispose();
+                that.stateItems.splice(index, 1);
+            }
+        })
+
+        ko.utils.arrayForEach(addQueue, function (diffEntry) {
+            var index = findInsertionIndex(outputArray, diffEntry.value, that.comparefn);
+            var stateItem = new SortedStateItem(that, diffEntry.value);
+            outputArray.splice(index, 0, stateItem.inputItem);
+            that.stateItems.splice(index, 0, stateItem);
+        });
+
+        this.outputObservable.valueHasMutated();
+    };
+
+    function observableArraySortBy(ko, options) {
+        var inputObservableArray = this;
+
+        // Shorthand syntax - just pass a function instead of an options object
+        if (typeof options === 'function') {
+            options = { mapping: options };
+        }
+
+        var projection = new SortByProjection(ko, this, options);
+
+        return projection.output;
+    }
+    function observableArrayUniqueIndexBy(ko, options) {
+        // Shorthand syntax - just pass a function instead of an options object
+        if (typeof options === 'function') {
+            options = { mapping: options };
+        }
+        options.unique = true;
+
+        var projection = new UniqueIndexByProjection(ko, this, options);
+
+        return projection.output;
+    }
+
+    // Indexing
 
     function IndexByProjection(ko, inputObservableArray, options) {
         var that = this;
@@ -707,7 +734,6 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
     extend(UniqueIndexByProjection.prototype, IndexByProjection.prototype);
 
-    // Indexing
     UniqueIndexByProjection.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
         indexMapping[key] = item;
     };
