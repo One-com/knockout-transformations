@@ -19,6 +19,10 @@ Download a copy of `knockout-projections-x.y.z.js` from [the `dist` directory](h
 
 Be sure to reference it *after* you reference Knockout itself, and of course replace `x.y.z` with the version number of the file you downloaded.
 
+This Fork is also release to NPM under the name:
+
+    one-com-knockout-projections
+
 Usage
 =====
 
