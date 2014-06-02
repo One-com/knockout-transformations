@@ -276,7 +276,7 @@
             var sampleData, sourceArray, indexedData;
 
             beforeEach(function () {
-                sampleData = ['Beta', 'Beta', 'Gamma', 'Alpha'];
+                sampleData = ['Beta', 'Gamma', 'Alpha'];
                 sourceArray = ko.observableArray(sampleData);
                 indexedData = sourceArray.uniqueIndexBy(function (item) {
                     return item;
@@ -303,7 +303,7 @@
             });
 
             it('updates the index on push', function () {
-                sourceArray.push('Foo', 'Bar', 'Beta');
+                sourceArray.push('Foo', 'Bar');
                 expect(indexedData).toEqual({
                     'Alpha': 'Alpha',
                     'Beta': 'Beta',
@@ -327,18 +327,9 @@
             it('updates the index on replacing with splice', function () {
                 sourceArray.splice(1, 2, 'Foo', 'Bar');
                 expect(indexedData).toEqual({
-                    'Alpha': 'Alpha',
                     'Beta': 'Beta',
                     'Foo': 'Foo',
                     'Bar': 'Bar'
-                });
-            });
-
-            it('handles when an duplicated key gets removed completely', function () {
-                sourceArray.splice(0, 2);
-                expect(indexedData).toEqual({
-                    'Alpha': 'Alpha',
-                    'Gamma': 'Gamma'
                 });
             });
 
@@ -354,7 +345,6 @@
                 sourceArray.shift();
                 expect(indexedData).toEqual({
                     'Alpha': 'Alpha',
-                    'Beta': 'Beta',
                     'Gamma': 'Gamma',
                 });
             });
@@ -375,6 +365,12 @@
                     'Beta': 'Beta',
                     'Gamma': 'Gamma',
                 });
+            });
+
+            it('throw an error if multiple items maps to the same key', function () {
+                expect(function () {
+                    sourceArray.push('Beta');
+                }, 'to throw', 'Unique indexes requires items must map to different keys');
             });
         });
 
@@ -501,6 +497,12 @@
                 sampleData[3].name('Jesus Christ');
 
                 expect(indexedData).toEqual(expectedIndex);
+            });
+
+            it('throw an error if multiple items maps to the same key', function () {
+                expect(function () {
+                    sourceArray.push(sampleData[0]);
+                }, 'to throw', 'Unique indexes requires items must map to different keys');
             });
         });
     });

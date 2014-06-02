@@ -735,6 +735,11 @@ See the Apache Version 2.0 License for specific language governing permissions a
     extend(UniqueIndexByProjection.prototype, IndexByProjection.prototype);
 
     UniqueIndexByProjection.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
+        console.log(key, indexMapping[key]);
+        if (key in indexMapping) {
+            throw new Error('Unique indexes requires items must map to different keys');
+        }
+
         indexMapping[key] = item;
     };
 
@@ -766,33 +771,23 @@ See the Apache Version 2.0 License for specific language governing permissions a
     UniqueIndexByProjection.prototype.addToIndex = function (inputItem) {
         var key = this.mapping(inputItem);
         var output = this.outputObservable.peek();
-        var stateItem = this.findStateItem(inputItem);
-        if (stateItem) {
-            stateItem.count += 1;
-        } else {
-            this.insertByKeyAndItem(output, key, inputItem);
-            stateItem = new UniqueIndexedStateItem(this, inputItem);
-            this.addStateItemToIndex(stateItem);
-        }
+        this.insertByKeyAndItem(output, key, inputItem);
+        var stateItem = new UniqueIndexedStateItem(this, inputItem);
+        this.addStateItemToIndex(stateItem);
     };
 
     UniqueIndexByProjection.prototype.removeItem = function (inputItem) {
         var stateItem = this.findStateItem(inputItem);
         if (stateItem) {
-            if (stateItem.count > 1) {
-                stateItem.count -= 1;
-            } else {
-                var key = stateItem.mappedValueComputed();
-                var output = this.outputObservable.peek();
-                this.removeByKeyAndItem(output, key, inputItem);
-                this.removeStateItem(stateItem);
-            }
+            var key = stateItem.mappedValueComputed();
+            var output = this.outputObservable.peek();
+            this.removeByKeyAndItem(output, key, inputItem);
+            this.removeStateItem(stateItem);
         }
     };
 
     function UniqueIndexedStateItem(projection, inputItem) {
         IndexedStateItem.call(this, projection, inputItem);
-        this.count = 1;
     }
 
     extend(UniqueIndexedStateItem.prototype, IndexedStateItem.prototype);
