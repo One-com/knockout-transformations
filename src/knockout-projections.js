@@ -21,7 +21,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
             }
         });
         return obj;
-    };
+    }
 
     var exclusionMarker = {};
 
@@ -336,7 +336,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 }
             }
             return 0;
-        }
+        };
     }
 
     function binarySearch(items, item, comparefn) {
@@ -471,7 +471,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         var originalDispose = this.output.dispose;
         this.output.dispose = function() {
             inputArraySubscription.dispose();
-            ko.utils.arrayForEach(stateItems, function(stateItem) {
+            ko.utils.arrayForEach(that.stateItems, function(stateItem) {
                 stateItem.dispose();
             });
             originalDispose.call(this, arguments);
@@ -483,11 +483,11 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
     SortByProjection.Descending = function Descending(value) {
         this.value = value;
-    }
+    };
 
     SortByProjection.Descending.create = function (value) {
         return new SortByProjection.Descending(value);
-    }
+    };
 
     SortByProjection.prototype.onStructuralChange = function (diff) {
         if (!diff.length) {
@@ -519,7 +519,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 that.stateItems[index].dispose();
                 that.stateItems.splice(index, 1);
             }
-        })
+        });
 
         ko.utils.arrayForEach(addQueue, function (diffEntry) {
             var index = findInsertionIndex(outputArray, diffEntry.value, that.comparefn);
@@ -532,25 +532,12 @@ See the Apache Version 2.0 License for specific language governing permissions a
     };
 
     function observableArraySortBy(ko, options) {
-        var inputObservableArray = this;
-
         // Shorthand syntax - just pass a function instead of an options object
         if (typeof options === 'function') {
             options = { mapping: options };
         }
 
         var projection = new SortByProjection(ko, this, options);
-
-        return projection.output;
-    }
-    function observableArrayUniqueIndexBy(ko, options) {
-        // Shorthand syntax - just pass a function instead of an options object
-        if (typeof options === 'function') {
-            options = { mapping: options };
-        }
-        options.unique = true;
-
-        var projection = new UniqueIndexByProjection(ko, this, options);
 
         return projection.output;
     }
@@ -564,7 +551,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         this.outputObservable = ko.observable({});
         this.stateItems = {};
 
-        var mapping = this.mapping = options.mapping;
+        this.mapping = options.mapping;
 
         var inputArray = inputObservableArray.peek();
         for (var i = 0; i < inputArray.length; i += 1) {
@@ -579,14 +566,14 @@ See the Apache Version 2.0 License for specific language governing permissions a
         var originalDispose = this.output.dispose;
         this.output.dispose = function() {
             inputArraySubscription.dispose();
-            for (var prop in stateItems) {
-                if (stateItems.hasOwnProperty(prop)) {
-                    stateItems[prop].dispose();
+            for (var prop in that.stateItems) {
+                if (that.stateItems.hasOwnProperty(prop)) {
+                    that.stateItems[prop].dispose();
                 }
             }
             originalDispose.call(this, arguments);
         };
-    };
+    }
 
     IndexByProjection.prototype.appendToEntry = function (obj, key, item) {
         var entry = obj[key];
@@ -594,7 +581,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
             entry = obj[key] = [];
         }
         entry.push(item);
-    }
+    };
 
     IndexByProjection.prototype.removeFromEntry = function (obj, key, item) {
         var entry = obj[key];
@@ -608,7 +595,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 }
             }
         }
-    }
+    };
 
     IndexByProjection.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
         this.appendToEntry(indexMapping, key, item);
@@ -670,7 +657,6 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
         var addQueue = [];
         var deleteQueue = [];
-        var moveQueue = [];
         ko.utils.arrayForEach(diff, function (diffEntry) {
             if (typeof diffEntry.moved !== 'number') {
                 switch (diffEntry.status) {
@@ -735,7 +721,6 @@ See the Apache Version 2.0 License for specific language governing permissions a
     extend(UniqueIndexByProjection.prototype, IndexByProjection.prototype);
 
     UniqueIndexByProjection.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
-        console.log(key, indexMapping[key]);
         if (key in indexMapping) {
             throw new Error('Unique indexes requires items must map to different keys');
         }
