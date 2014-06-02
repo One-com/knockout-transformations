@@ -32,7 +32,9 @@ var sourceItems = ko.observableArray([1, 2, 3, 4, 5]);
 
 There's a plain observable array. Now let's say we want to keep track of the squares of these values:
 
+```js
 var squares = sourceItems.map(function(x) { return x*x; });
+```
 
 Now `squares` is an observable array containing `[1, 4, 9, 16, 25]`. Let's modify the source data:
 
@@ -94,7 +96,7 @@ function Person(name, yearOfBirth) {
     this.yearOfBirth = ko.observable(yearOfBirth);
 }
 
-var persons = [
+var persons = ko.observableArray([
     new Person("Marilyn Monroe", 1926),
     new Person("Abraham Lincoln", 1809),
     new Person("Mother Teresa", 1910),
@@ -105,20 +107,115 @@ var persons = [
     new Person("Bill Gates", 1955),
     new Person("Muhammad Ali", 1942),
     new Person("Mahatma Gandhi", 1869),
-];
+    new Person("Queen Elizabeth II", 1926)
+]);
 
 // Persons sorted by name
 var sortedByName = persons.sortBy(function (person) {
     return person.name();
 });
 
+// sortedByName now contains
+// [
+//     new Person("Abraham Lincoln", 1809),
+//     new Person("Bill Gates", 1955),
+//     new Person("John F. Kennedy", 1917),
+//     new Person("Mahatma Gandhi", 1869),
+//     new Person("Marilyn Monroe", 1926),
+//     new Person("Martin Luther King", 1929),
+//     new Person("Mother Teresa", 1910),
+//     new Person("Muhammad Ali", 1942)
+//     new Person("Nelson Mandela", 1918),
+//     new Person("Queen Elizabeth II", 1926),
+//     new Person("Winston Churchill", 1874),
+// ]
+
 // Persons sorted by year of birth descending and then by name
 var sortedByYearOfBirthAndThenName = persons.sortBy(function (person, descending) {
     return [descending(person.yearOfBirth()), person.name()];
 });
+
+// sortedByYearOfBirthAndThenName now contains
+// [
+//     new Person("Abraham Lincoln", 1809),
+//     new Person("Mahatma Gandhi", 1869),
+//     new Person("Winston Churchill", 1874),
+//     new Person("Mother Teresa", 1910),
+//     new Person("John F. Kennedy", 1917),
+//     new Person("Nelson Mandela", 1918),
+//     new Person("Martin Luther King", 1929),
+//     new Person("Bill Gates", 1955),
+//     new Person("Marilyn Monroe", 1926),
+//     new Person("Queen Elizabeth II", 1926),
+//     new Person("Muhammad Ali", 1942)
+// ]
 ```
 
 The sorted list is only updated when items are added or removed and when properties that are sorted on changes.
+
+**Indexing**
+
+This projection provides you with live updated index on a key returned
+by the given function. In contrast to the `map`, `filter` and `sortBy`
+this projection returns an object and is therefore not a candidate for
+changing.
+
+```js
+var squareIndex = squares.indexBy(function (square) {
+    return square % 2 === 0 ? 'even' : 'odd';
+});
+
+// squareIndex now contains
+// { even: [36, 16, 4], odd: [25, 9, 1] }
+36, 25, 16, 9, 4, 1
+```
+
+A more involved example using the persons defined in the sorting example:
+
+```js
+
+// Persons indexed by year of birth
+var personsIndexedByYearBirth = persons.indexBy(function (person) {
+    return person.yearOfBirth();
+});
+
+// personsIndexedByYearBirth now contains
+// {
+//     1809: [new Person("Abraham Lincoln", 1809)],
+//     1869: [new Person("Mahatma Gandhi", 1869)],
+//     1874: [new Person("Winston Churchill", 1874)],
+//     1910: [new Person("Mother Teresa", 1910)],
+//     1917: [new Person("John F. Kennedy", 1917)],
+//     1918: [new Person("Nelson Mandela", 1918)],
+//     1929: [new Person("Martin Luther King", 1929)],
+//     1955: [new Person("Bill Gates", 1955)],
+//     1926: [new Person("Marilyn Monroe", 1926),
+//            new Person("Queen Elizabeth II", 1926)],
+//     1942: [new Person("Muhammad Ali", 1942)]
+// }
+
+// Persons indexed uniquely by name.
+// Notice unique indexes requires items to map to distint keys;
+// otherwise an exception is thrown.
+var personsIndexedByName = persons.uniqueIndexBy(function (person) {
+    return person.name();
+});
+
+// personsIndexedByName now contains
+// {
+//     "Abraham Lincoln": new Person("Abraham Lincoln", 1809),
+//     "Mahatma Gandhi": new Person("Mahatma Gandhi", 1869),
+//     "Winston Churchill": new Person("Winston Churchill", 1874),
+//     "Mother Teresa": new Person("Mother Teresa", 1910),
+//     "John F. Kennedy": new Person("John F. Kennedy", 1917),
+//     "Nelson Mandela": new Person("Nelson Mandela", 1918),
+//     "Martin Luther King": new Person("Martin Luther King", 1929),
+//     "Bill Gates": new Person("Bill Gates", 1955),
+//     "Marilyn Monroe": new Person("Marilyn Monroe", 1926),
+//     "Queen Elizabeth II": new Person("Queen Elizabeth II", 1926),
+//     "Muhammad Ali": new Person("Muhammad Ali", 1942)
+// }
+```
 
 **Chaining**
 
