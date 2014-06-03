@@ -224,7 +224,7 @@ var personsIndexedByName = persons.uniqueIndexBy(function (person) {
 It is also possible to create an index on multiple keys to following way:
 
 ```js
-var texts = ['foo', 'bar', 'baz', 'qux', 'quux']
+var texts = ko.observableArray(['foo', 'bar', 'baz', 'qux', 'quux']);
 // Index texts by
 var indexedTexts = texts.indexBy(function (text) {
     var firstLetter = text[0];
