@@ -26,7 +26,7 @@
             });
 
             it('results in an empty map', function () {
-                expect(indexedData()).toOnlyHaveKeys([]);
+                expect(indexedData()).toEqual({});
             });
         });
 
@@ -250,6 +250,27 @@
 
                 expect(indexedData).toEqual(expectedIndex);
             });
+
+            describe('on multiple keys', function () {
+                beforeEach(function () {
+                    indexedData = sourceArray.indexBy(function(person) {
+                        return [person.name(), person.yearOfBirth()];
+                    })();
+
+                    expectedIndex = {};
+                    ko.utils.arrayForEach(sampleData, function (person) {
+                        expectedIndex[person.name()] = expectedIndex[person.name()] || [];
+                        expectedIndex[person.name()].push(person);
+
+                        expectedIndex[person.yearOfBirth()] = expectedIndex[person.yearOfBirth()] || [];
+                        expectedIndex[person.yearOfBirth()].push(person);
+                    });
+                });
+
+                it("indexes the array according to the given function, returning a computed map", function () {
+                    expect(indexedData).toEqual(expectedIndex);
+                });
+            });
         });
     });
 
@@ -268,7 +289,7 @@
             });
 
             it('results in an empty map', function () {
-                expect(indexedData).toOnlyHaveKeys([]);
+                expect(indexedData).toEqual({});
             });
         });
 
@@ -406,19 +427,14 @@
                     new Person("Charles de Gaulle", 1890),
                     new Person("Christopher Columbus", 1451),
                     new Person("George Orwell", 1903),
-                    new Person("Charles Darwin", 1809),
                     new Person("Elvis Presley", 1935),
                     new Person("Albert Einstein", 1879),
-                    new Person("Paul McCartney", 1942),
-                    new Person("Plato", 423),
-                    new Person("Queen Elizabeth II", 1926)
+                    new Person("Plato", 423)
                 ];
 
                 expectedIndex = {};
                 ko.utils.arrayForEach(sampleData, function (person) {
-                    if (!expectedIndex[person.name()]) {
-                        expectedIndex[person.name()] = person;
-                    }
+                    expectedIndex[person.name()] = person;
                 });
 
                 sourceArray = ko.observableArray(sampleData);
@@ -503,6 +519,24 @@
                 expect(function () {
                     sourceArray.push(sampleData[0]);
                 }, 'to throw', 'Unique indexes requires items must map to different keys');
+            });
+
+            describe('on multiple keys', function () {
+                beforeEach(function () {
+                    indexedData = sourceArray.uniqueIndexBy(function(person) {
+                        return [person.name(), person.yearOfBirth()];
+                    })();
+
+                    expectedIndex = {};
+                    ko.utils.arrayForEach(sampleData, function (person) {
+                        expectedIndex[person.name()] = person;
+                        expectedIndex[person.yearOfBirth()] = person;
+                    });
+                });
+
+                it("indexes the array according to the given function, returning a computed map", function () {
+                    expect(indexedData).toEqual(expectedIndex);
+                });
             });
         });
     });

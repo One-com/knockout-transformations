@@ -551,7 +551,9 @@ See the Apache Version 2.0 License for specific language governing permissions a
         this.outputObservable = ko.observable({});
         this.stateItems = {};
 
-        this.mapping = options.mapping;
+        this.mapping = function (item) {
+            return [].concat(options.mapping(item));
+        };
 
         var inputArray = inputObservableArray.peek();
         for (var i = 0; i < inputArray.length; i += 1) {
@@ -574,6 +576,32 @@ See the Apache Version 2.0 License for specific language governing permissions a
             originalDispose.call(this, arguments);
         };
     }
+
+    IndexByProjection.prototype.arraysEqual = function (a, b) {
+        var ko = this.ko;
+        if (a === b) {
+            return true;
+        }
+
+        if (typeof a === 'undefined' || typeof b === 'undefined') {
+            return false;
+        }
+
+        if (a.length !== b.length) {
+            return false;
+        }
+
+        for (var i = 0; i < a.length; i += 1) {
+            if ((ko.observable.fn.equalityComparer &&
+                 ko.isObservable(a[i]) &&
+                 !ko.observable.fn.equalityComparer(a[i], b[i])) ||
+                a[i] !== b[i]) {
+                return false;
+            }
+        }
+        return true;
+    };
+
 
     IndexByProjection.prototype.appendToEntry = function (obj, key, item) {
         var entry = obj[key];
@@ -606,13 +634,13 @@ See the Apache Version 2.0 License for specific language governing permissions a
     };
 
     IndexByProjection.prototype.addStateItemToIndex = function (stateItem) {
-        var key = this.mapping(stateItem.inputItem);
+        var key = this.mapping(stateItem.inputItem)[0];
         this.appendToEntry(this.stateItems, key, stateItem);
     };
 
     IndexByProjection.prototype.findStateItem = function (inputItem) {
         var ko = this.ko;
-        var key = this.mapping(inputItem);
+        var key = this.mapping(inputItem)[0];
         var entry = this.stateItems[key];
         if (!entry) {
             return null;
@@ -625,25 +653,33 @@ See the Apache Version 2.0 License for specific language governing permissions a
     };
 
     IndexByProjection.prototype.removeStateItem = function (stateItem) {
-        var key = stateItem.mappedValueComputed();
+        var key = stateItem.mappedValueComputed()[0];
         this.removeFromEntry(this.stateItems, key, stateItem);
         stateItem.dispose();
     };
 
     IndexByProjection.prototype.addToIndex = function (inputItem) {
-        var key = this.mapping(inputItem);
+        var that = this;
+        var ko = this.ko;
+        var keys = this.mapping(inputItem);
         var output = this.outputObservable.peek();
-        this.insertByKeyAndItem(output, key, inputItem);
+        ko.utils.arrayForEach(keys, function (key) {
+            that.insertByKeyAndItem(output, key, inputItem);
+        });
         var stateItem = new IndexedStateItem(this, inputItem);
         this.addStateItemToIndex(stateItem);
     };
 
     IndexByProjection.prototype.removeItem = function (inputItem) {
+        var that = this;
+        var ko = this.ko;
         var stateItem = this.findStateItem(inputItem);
         if (stateItem) {
-            var key = stateItem.mappedValueComputed();
+            var keys = stateItem.mappedValueComputed();
             var output = this.outputObservable.peek();
-            this.removeByKeyAndItem(output, key, inputItem);
+            ko.utils.arrayForEach(keys, function (key) {
+                that.removeByKeyAndItem(output, key, inputItem);
+            });
             this.removeStateItem(stateItem);
         }
     };
@@ -703,8 +739,8 @@ See the Apache Version 2.0 License for specific language governing permissions a
     };
 
     IndexedStateItem.prototype.onMappingResultChanged = function (newValue) {
-        if (newValue !== this.previousMappedValue) {
-            var projection = this.projection;
+        var projection = this.projection;
+        if (!projection.arraysEqual(this.newValue, this.previousMappedValue)) {
             var output = projection.outputObservable.peek();
             projection.removeByKeyAndItem(output, this.previousMappedValue, this.inputItem);
             projection.removeByKeyAndItem(projection.stateItems, this.previousMappedValue, this);
@@ -722,7 +758,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
     UniqueIndexByProjection.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
         if (key in indexMapping) {
-            throw new Error('Unique indexes requires items must map to different keys');
+            throw new Error('Unique indexes requires items must map to different keys; duplicate key: ' + key);
         }
 
         indexMapping[key] = item;
@@ -733,20 +769,17 @@ See the Apache Version 2.0 License for specific language governing permissions a
     };
 
     UniqueIndexByProjection.prototype.addStateItemToIndex = function (stateItem) {
-        var key = stateItem.mappedValueComputed();
-        if (key in this.stateItems) {
-            this.stateItems[key].dispose();
-        }
+        var key = stateItem.mappedValueComputed()[0];
         this.stateItems[key] = stateItem;
     };
 
     UniqueIndexByProjection.prototype.findStateItem = function (inputItem) {
-        var key = this.mapping(inputItem);
+        var key = this.mapping(inputItem)[0];
         return this.stateItems[key] || null;
     };
 
     UniqueIndexByProjection.prototype.removeStateItem = function (stateItem) {
-        var key = stateItem.mappedValueComputed();
+        var key = stateItem.mappedValueComputed()[0];
         if (this.stateItems[key] === stateItem) {
             delete this.stateItems[key];
         }
@@ -754,19 +787,27 @@ See the Apache Version 2.0 License for specific language governing permissions a
     };
 
     UniqueIndexByProjection.prototype.addToIndex = function (inputItem) {
-        var key = this.mapping(inputItem);
+        var that = this;
+        var ko = this.ko;
+        var keys = this.mapping(inputItem);
         var output = this.outputObservable.peek();
-        this.insertByKeyAndItem(output, key, inputItem);
+        ko.utils.arrayForEach(keys, function (key) {
+            that.insertByKeyAndItem(output, key, inputItem);
+        });
         var stateItem = new UniqueIndexedStateItem(this, inputItem);
         this.addStateItemToIndex(stateItem);
     };
 
     UniqueIndexByProjection.prototype.removeItem = function (inputItem) {
+        var that = this;
+        var ko = this.ko;
         var stateItem = this.findStateItem(inputItem);
         if (stateItem) {
-            var key = stateItem.mappedValueComputed();
+            var keys = stateItem.mappedValueComputed();
             var output = this.outputObservable.peek();
-            this.removeByKeyAndItem(output, key, inputItem);
+            ko.utils.arrayForEach(keys, function (key) {
+                that.removeByKeyAndItem(output, key, inputItem);
+            });
             this.removeStateItem(stateItem);
         }
     };

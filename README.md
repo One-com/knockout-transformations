@@ -221,6 +221,29 @@ var personsIndexedByName = persons.uniqueIndexBy(function (person) {
 // }
 ```
 
+It is also possible to create an index on multiple keys to following way:
+
+```js
+var texts = ['foo', 'bar', 'baz', 'qux', 'quux']
+// Index texts by
+var indexedTexts = texts.indexBy(function (text) {
+    var firstLetter = text[0];
+    var lastLetter = text[text.length - 1];
+    return [firstLetter, lastLetter];
+});
+
+// indexedTexts now contains
+// {
+//     f: ['foo'],
+//     b: ['bar', 'baz'],
+//     q: ['qux', 'quux'],
+//     o: ['foo'],
+//     r: ['bar'],
+//     z: ['baz'],
+//     x: ['qux', 'quux']
+// }
+```
+
 **Chaining**
 
 The above code also demonstrates that you can chain together successive `map`, `filter` and `sortBy` transformations.
