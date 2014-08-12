@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------
 Copyright (c) Microsoft Corporation
 All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 THIS CODE IS PROVIDED *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT.
 See the Apache Version 2.0 License for specific language governing permissions and limitations under the License.
 ------------------------------------------------------------------------------
@@ -147,6 +147,90 @@ See the Apache Version 2.0 License for specific language governing permissions a
             sampleData.everest.height(123);
             expect(outputNotifications).toBe(2); // No new notifications
             expect(filterCallsCount).toBe(11); // Only Everest had to be refiltered
+        });
+
+        describe('group inclussion example', function () {
+            var persons, groups, person;
+
+            function Person(id) {
+                var that = this;
+                this.id = id;
+                this.groups = groups.filter(function (group) {
+                    return group.contains(that);
+                });
+            }
+
+            function Group(ids) {
+                this.ids = ko.observableArray(ids);
+                this.members = this.ids.map(function (id) {
+                    return persons().filter(function (person) {
+                        return person.id === id;
+                    })[0];
+                });
+            }
+
+            Group.prototype.contains = function (member) {
+                return this.ids.indexOf(member.id) !== -1;
+            };
+
+            Group.prototype.add = function (member) {
+                if (!this.contains(member)) {
+                    this.ids.push(member.id);
+                }
+            };
+
+            Group.prototype.remove = function (member) {
+                if (this.contains(member)) {
+                    this.ids.remove(member.id);
+                }
+            };
+
+            beforeEach(function () {
+                persons = ko.observableArray([]);
+                groups = ko.observableArray([]);
+                for (var id = 0; id < 10; id += 1) {
+                    persons.push(new Person(id));
+                }
+                groups([
+                    new Group([0, 1, 2]),
+                    new Group([2, 3, 4, 5, 6]),
+                    new Group([5, 6, 7, 8, 9])
+                ]);
+                person = persons()[5];
+            });
+
+            it('group membership is initialized correctly', function () {
+                expect(person.groups()).toEqual(groups.slice(1));
+                expect(groups()[0].members()).toNotContain(person);
+                expect(groups()[1].members()).toContain(person);
+                expect(groups()[2].members()).toContain(person);
+            });
+
+            it('group membership is updated correctly when the person is added to an existing group', function () {
+                groups()[0].add(person);
+                expect(person.groups()).toEqual(groups());
+                expect(groups()[0].members()).toContain(person);
+                expect(groups()[1].members()).toContain(person);
+                expect(groups()[2].members()).toContain(person);
+            });
+
+            it('group membership is updated correctly when the person is removed from a group', function () {
+                groups()[1].remove(person);
+                expect(person.groups()).toEqual(groups.slice(2));
+                expect(groups()[0].members()).toNotContain(person);
+                expect(groups()[1].members()).toNotContain(person);
+                expect(groups()[2].members()).toContain(person);
+            });
+
+            it('group membership is updated correctly when the person is added to a new group', function () {
+                groups.push(new Group());
+                groups()[groups().length - 1].add(person);
+                expect(person.groups()).toEqual(groups.slice(1));
+                expect(groups()[0].members()).toNotContain(person);
+                expect(groups()[1].members()).toContain(person);
+                expect(groups()[2].members()).toContain(person);
+                expect(groups()[3].members()).toContain(person);
+            });
         });
     });
 })();
