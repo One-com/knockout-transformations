@@ -433,11 +433,13 @@ See the Apache Version 2.0 License for specific language governing permissions a
     SortedStateItem.prototype.onMappingResultChanged = function (newValue) {
         if (newValue !== this.previousMappedValue) {
             var projection = this.projection;
-            var outputArray = projection.outputObservable.peek();
+            var outputObservable = projection.outputObservable;
+            var outputArray = outputObservable.peek();
             var stateItems = projection.stateItems;
             var oldIndex = binaryIndexOf(stateItems, this, mappingToComparefn(function (stateItem) {
                 return stateItem.previousMappedValue;
             }));
+            outputObservable.valueWillMutate();
             outputArray.splice(oldIndex, 1);
             stateItems.splice(oldIndex, 1);
 
@@ -446,6 +448,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
             stateItems.splice(index, 0, this);
 
             this.previousMappedValue = newValue;
+            outputObservable.valueHasMutated();
         }
     };
 
@@ -741,12 +744,15 @@ See the Apache Version 2.0 License for specific language governing permissions a
     IndexedStateItem.prototype.onMappingResultChanged = function (newValue) {
         var projection = this.projection;
         if (!projection.arraysEqual(this.newValue, this.previousMappedValue)) {
-            var output = projection.outputObservable.peek();
+            var outputObservable = projection.outputObservable;
+            var output = outputObservable.peek();
+            outputObservable.valueWillMutate();
             projection.removeByKeyAndItem(output, this.previousMappedValue, this.inputItem);
             projection.removeByKeyAndItem(projection.stateItems, this.previousMappedValue, this);
             projection.insertByKeyAndItem(output, newValue, this.inputItem);
             projection.addStateItemToIndex(this);
             this.previousMappedValue = newValue;
+            outputObservable.valueHasMutated();
         }
     };
 
