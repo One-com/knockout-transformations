@@ -1,4 +1,4 @@
-/*! Knockout projections plugin - version 1.1.1
+/*! Knockout projections plugin - version 1.1.2
 ------------------------------------------------------------------------------
 Copyright (c) Microsoft Corporation
 All rights reserved.
@@ -72,6 +72,10 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
     StateItem.prototype.onMappingResultChanged = function(newValue) {
         if (newValue !== this.previousMappedValue) {
+            if (!this.suppressNotification) {
+                this.outputObservableArray.valueWillMutate();
+            }
+
             if (this.isIncluded) {
                 this.outputArray.splice(this.outputArrayIndex.peek(), 1, newValue);
             }
@@ -205,6 +209,8 @@ See the Apache Version 2.0 License for specific language governing permissions a
             if (!diff.length) {
                 return;
             }
+
+            outputObservableArray.valueWillMutate();
 
             var movedStateItems = makeLookupOfMovedStateItems(diff, arrayOfState),
                 diffIndex = 0,
@@ -496,6 +502,8 @@ See the Apache Version 2.0 License for specific language governing permissions a
         if (!diff.length) {
             return;
         }
+
+        this.outputObservable.valueWillMutate();
 
         var that = this;
         var ko = this.ko;
