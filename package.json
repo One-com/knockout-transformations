@@ -7,7 +7,7 @@
     "test": "test"
   },
   "dependencies": {
-    "knockout": "~3.0.0",
+    "knockout": "~3.2.0",
     "jasmine-reporters": "~0.2.1"
   },
   "devDependencies": {

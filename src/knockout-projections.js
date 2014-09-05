@@ -38,7 +38,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
         // Set up observables
         this.outputArrayIndex = ko.observable(initialOutputArrayIndex); // When excluded, it's the position the item would go if it became included
-        this.mappedValueComputed = ko.computed(this.mappingEvaluator, this);
+        this.mappedValueComputed = ko.pureComputed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
@@ -287,7 +287,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
         // Return value is a readonly computed which can track its own changes to permit chaining.
         // When disposed, it cleans up everything it created.
-        var returnValue = ko.computed(outputObservableArray).extend({ trackArrayChanges: true }),
+        var returnValue = ko.pureComputed(outputObservableArray).extend({ trackArrayChanges: true }),
             originalDispose = returnValue.dispose;
         returnValue.dispose = function() {
             inputArraySubscription.dispose();
@@ -419,7 +419,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         this.projection = projection;
         this.inputItem = inputItem;
 
-        this.mappedValueComputed = ko.computed(this.mappingEvaluator, this);
+        this.mappedValueComputed = ko.pureComputed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
@@ -476,7 +476,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
         // Return value is a readonly computed which can track its own changes to permit chaining.
         // When disposed, it cleans up everything it created.
-        this.output = ko.computed(this.outputObservable).extend({ trackArrayChanges: true });
+        this.output = ko.pureComputed(this.outputObservable).extend({ trackArrayChanges: true });
         var originalDispose = this.output.dispose;
         this.output.dispose = function() {
             inputArraySubscription.dispose();
@@ -575,7 +575,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         var inputArraySubscription = inputObservableArray.subscribe(this.onStructuralChange, this, 'arrayChange');
 
         // Return value is a readonly, when disposed, it cleans up everything it created.
-        this.output = ko.computed(this.outputObservable);
+        this.output = ko.pureComputed(this.outputObservable);
         var originalDispose = this.output.dispose;
         this.output.dispose = function() {
             inputArraySubscription.dispose();
@@ -731,7 +731,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
     function IndexedStateItem(projection, inputItem) {
         this.projection = projection;
         this.inputItem = inputItem;
-        this.mappedValueComputed = projection.ko.computed(this.mappingEvaluator, this);
+        this.mappedValueComputed = projection.ko.pureComputed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
