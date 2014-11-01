@@ -1,6 +1,6 @@
 {
   "name": "one-com-knockout-projections",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Knockout.js observable arrays get smarter",
   "main": "dist/knockout-projections.js",
   "directories": {
