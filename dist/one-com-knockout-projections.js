@@ -1,4 +1,4 @@
-/*! Knockout projections plugin - version 1.1.3
+/*! Knockout projections plugin - version 1.2.0
 ------------------------------------------------------------------------------
 Copyright (c) Microsoft Corporation
 All rights reserved.
@@ -38,23 +38,51 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
         // Set up observables
         this.outputArrayIndex = ko.observable(initialOutputArrayIndex); // When excluded, it's the position the item would go if it became included
+        this.disposeFuncFromMostRecentMapping = null;
         this.mappedValueComputed = ko.computed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
 
     StateItem.prototype.dispose = function() {
-        var mappedItem = this.mappedValueComputed();
         this.mappedValueComputed.dispose();
+        this.disposeResultFromMostRecentEvaluation();
+    };
+
+    StateItem.prototype.disposeResultFromMostRecentEvaluation = function() {
+        if (this.disposeFuncFromMostRecentMapping) {
+            this.disposeFuncFromMostRecentMapping();
+            this.disposeFuncFromMostRecentMapping = null;
+        }
 
         if (this.mappingOptions.disposeItem) {
+            var mappedItem = this.mappedValueComputed();
             this.mappingOptions.disposeItem(mappedItem);
         }
     };
 
     StateItem.prototype.mappingEvaluator = function() {
-        var mappedValue = this.mappingOptions.mapping(this.inputItem, this.outputArrayIndex),
-            newInclusionState = mappedValue !== exclusionMarker;
+        if (this.isIncluded !== null) { // i.e., not first run
+            // This is a replace-in-place, so call any dispose callbacks
+            // we have for the earlier value
+            this.disposeResultFromMostRecentEvaluation();
+        }
+
+        var mappedValue;
+        if (this.mappingOptions.mapping) {
+            mappedValue = this.mappingOptions.mapping(this.inputItem, this.outputArrayIndex);
+        } else if (this.mappingOptions.mappingWithDisposeCallback) {
+            var mappedValueWithDisposeCallback = this.mappingOptions.mappingWithDisposeCallback(this.inputItem, this.outputArrayIndex);
+            if (!('mappedValue' in mappedValueWithDisposeCallback)) {
+                throw new Error('Return value from mappingWithDisposeCallback should have a \'mappedItem\' property.');
+            }
+            mappedValue = mappedValueWithDisposeCallback.mappedValue;
+            this.disposeFuncFromMostRecentMapping = mappedValueWithDisposeCallback.dispose;
+        } else {
+            throw new Error('No mapping callback given.');
+        }
+
+        var newInclusionState = mappedValue !== exclusionMarker;
 
         // Inclusion state changes can *only* happen as a result of changing an individual item.
         // Structural changes to the array can't cause this (because they don't cause any remapping;
@@ -270,6 +298,15 @@ See the Apache Version 2.0 License for specific language governing permissions a
             mappingOptions = { mapping: mappingOptions };
         }
 
+        // Validate the options
+        if (mappingOptions.mappingWithDisposeCallback) {
+            if (mappingOptions.mapping || mappingOptions.disposeItem) {
+                throw new Error('\'mappingWithDisposeCallback\' cannot be used in conjunction with \'mapping\' or \'disposeItem\'.');
+            }
+        } else if (!mappingOptions.mapping) {
+            throw new Error('Specify either \'mapping\' or \'mappingWithDisposeCallback\'.');
+        }
+
         // Initial state: map each of the inputs
         for (var i = 0; i < originalInputArrayContents.length; i++) {
             var inputItem = originalInputArrayContents[i],
@@ -287,7 +324,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
         // Return value is a readonly computed which can track its own changes to permit chaining.
         // When disposed, it cleans up everything it created.
-        var returnValue = ko.computed(outputObservableArray).extend({ trackArrayChanges: true }),
+        var returnValue = ko.pureComputed(outputObservableArray).extend({ trackArrayChanges: true }),
             originalDispose = returnValue.dispose;
         returnValue.dispose = function() {
             inputArraySubscription.dispose();
@@ -419,7 +456,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         this.projection = projection;
         this.inputItem = inputItem;
 
-        this.mappedValueComputed = ko.computed(this.mappingEvaluator, this);
+        this.mappedValueComputed = ko.pureComputed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
@@ -476,7 +513,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
         // Return value is a readonly computed which can track its own changes to permit chaining.
         // When disposed, it cleans up everything it created.
-        this.output = ko.computed(this.outputObservable).extend({ trackArrayChanges: true });
+        this.output = ko.pureComputed(this.outputObservable).extend({ trackArrayChanges: true });
         var originalDispose = this.output.dispose;
         this.output.dispose = function() {
             inputArraySubscription.dispose();
@@ -575,7 +612,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         var inputArraySubscription = inputObservableArray.subscribe(this.onStructuralChange, this, 'arrayChange');
 
         // Return value is a readonly, when disposed, it cleans up everything it created.
-        this.output = ko.computed(this.outputObservable);
+        this.output = ko.pureComputed(this.outputObservable);
         var originalDispose = this.output.dispose;
         this.output.dispose = function() {
             inputArraySubscription.dispose();
@@ -731,7 +768,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
     function IndexedStateItem(projection, inputItem) {
         this.projection = projection;
         this.inputItem = inputItem;
-        this.mappedValueComputed = projection.ko.computed(this.mappingEvaluator, this);
+        this.mappedValueComputed = projection.ko.pureComputed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
