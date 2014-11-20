@@ -482,6 +482,13 @@ See the Apache Version 2.0 License for specific language governing permissions a
             var oldIndex = binaryIndexOf(stateItems, this, mappingToComparefn(function (stateItem) {
                 return stateItem.previousMappedValue;
             }));
+
+            if (stateItems[oldIndex] !== this) {
+                console.log('Found the wrong item. Found: ', stateItems[oldIndex], 'Expected: ', this);
+            } else {
+                console.log('Found correct item');
+            }
+
             outputObservable.valueWillMutate();
             outputArray.splice(oldIndex, 1);
             stateItems.splice(oldIndex, 1);
