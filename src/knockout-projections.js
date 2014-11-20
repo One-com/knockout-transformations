@@ -483,21 +483,28 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 return stateItem.previousMappedValue;
             }));
 
-            if (stateItems[oldIndex] !== this) {
-                console.log('Found the wrong item. Found: ', stateItems[oldIndex], 'Expected: ', this);
-            } else {
-                console.log('Found correct item');
-            }
-
             outputObservable.valueWillMutate();
-            outputArray.splice(oldIndex, 1);
-            stateItems.splice(oldIndex, 1);
+            if (stateItems[oldIndex] === this) {
+                // It seems the sort order of the underlying array is still usable
+                outputArray.splice(oldIndex, 1);
+                stateItems.splice(oldIndex, 1);
 
-            var index = findInsertionIndex(outputArray, this.inputItem, projection.comparefn);
-            outputArray.splice(index, 0, this.inputItem);
-            stateItems.splice(index, 0, this);
+                var index = findInsertionIndex(outputArray, this.inputItem, projection.comparefn);
+                outputArray.splice(index, 0, this.inputItem);
+                stateItems.splice(index, 0, this);
 
-            this.previousMappedValue = newValue;
+                this.previousMappedValue = newValue;
+            } else {
+                // The underlying array needs to be recalculated from scratch
+                outputArray.sort(projection.comparefn);
+                stateItems.sort(mappingToComparefn(function (stateItem) {
+                    return stateItem.mappingEvaluator();
+                }));
+
+                ko.utils.arrayForEach(stateItems, function (stateItem) {
+                    stateItem.previousMappedValue = stateItem.mappingEvaluator();
+                });
+            }
             outputObservable.valueHasMutated();
         }
     };
