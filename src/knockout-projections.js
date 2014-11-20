@@ -495,6 +495,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
                 this.previousMappedValue = newValue;
             } else {
+                var ko = projection.ko;
                 // The underlying array needs to be recalculated from scratch
                 outputArray.sort(projection.comparefn);
                 stateItems.sort(mappingToComparefn(function (stateItem) {

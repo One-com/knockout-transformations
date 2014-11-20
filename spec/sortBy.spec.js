@@ -256,8 +256,6 @@
                 });
 
                 expect(sortedArray()).toEqual(sorted(sampleData, comparefn));
-
-                window.foo = sortedArray();
             });
 
             describe('when the sort direction can change', function () {
