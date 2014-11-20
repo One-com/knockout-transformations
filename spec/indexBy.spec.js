@@ -393,6 +393,32 @@
                     sourceArray.push('Beta');
                 }, 'to throw', 'Unique indexes requires items must map to different keys');
             });
+
+            xit('handles reindexing on another field', function () {
+                sampleData = ko.utils.arrayMap(sampleData, function (text, i) {
+                    return { first: text, next: sampleData[(i + 1) % sampleData.length] };
+                });
+                console.log(sampleData);
+                var indexField = ko.observable('first');
+                sourceArray = ko.observableArray(sampleData);
+                indexedData = sourceArray.uniqueIndexBy(function (item) {
+                    return item[indexField()];
+                });
+
+                expect(indexedData()).toEqual({
+                    'Alpha': { first: 'Alpha', next: 'Beta' },
+                    'Beta': { first: 'Beta', next: 'Gamma' },
+                    'Gamma': { first: 'Gamma', next: 'Alpha' }
+                });
+
+                indexField('next');
+
+                expect(indexedData()).toEqual({
+                    'Beta': { first: 'Alpha', next: 'Beta' },
+                    'Gamma': { first: 'Beta', next: 'Gamma' },
+                    'Alpha': { first: 'Gamma', next: 'Alpha' }
+                });
+            });
         });
 
         describe('on complex data', function () {
