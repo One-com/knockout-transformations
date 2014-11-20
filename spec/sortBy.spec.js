@@ -248,6 +248,61 @@
                 expect(sortedArray()).toEqual(sorted(sampleData, comparefn));
                 expect(sortedArray()[sortedArray().length - 1].name()).toEqual('Jesus Christ');
             });
+
+            it('maintains the sort order when the sort direction flips', function () {
+                var i = sampleData.length;
+                sampleData.forEach(function (item) {
+                    item.yearOfBirth(0 - item.yearOfBirth());
+                });
+
+                expect(sortedArray()).toEqual(sorted(sampleData, comparefn));
+
+                window.foo = sortedArray();
+            });
+
+            describe('when the sort direction can change', function () {
+                var variableSortedArray, variablecomparefn, sortDirection;
+
+                beforeEach(function () {
+                    sortDirection = ko.observable(-1);
+
+                    variablecomparefn = function (a, b) {
+                        var sortDir = sortDirection();
+
+                        if (a.yearOfBirth() > b.yearOfBirth()) {
+                            return 1 * sortDir;
+                        } else if (a.yearOfBirth() < b.yearOfBirth()) {
+                            return -1 * sortDir;
+                        }
+
+                        if (a.name() < b.name()) {
+                            return -1;
+                        } else if (a.name() > b.name()) {
+                            return 1;
+                        }
+
+                        return 0;
+                    }
+
+                    variableSortedArray = sourceArray.sortBy(function(person, descending) {
+                        if (sortDirection() === 1) {
+                            return [person.yearOfBirth(), person.name()];
+                        } else {
+                            return [descending(person.yearOfBirth()), person.name()];
+                        }
+                    });
+                });
+
+                it('initially has the right sort order', function () {
+                    expect(variableSortedArray()).toEqual(sorted(sampleData, variablecomparefn));
+                });
+
+                it('maintains sort order when changing to ascending sort direction', function () {
+                    sortDirection(1);
+
+                    expect(variableSortedArray()).toEqual(sorted(sampleData, variablecomparefn));
+                });
+            });
         });
     });
 }());
