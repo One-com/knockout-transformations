@@ -483,8 +483,8 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 return stateItem.previousMappedValue;
             }));
 
-            outputObservable.valueWillMutate();
             if (stateItems[oldIndex] === this) {
+                outputObservable.valueWillMutate();
                 // It seems the sort order of the underlying array is still usable
                 outputArray.splice(oldIndex, 1);
                 stateItems.splice(oldIndex, 1);
@@ -494,19 +494,24 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 stateItems.splice(index, 0, this);
 
                 this.previousMappedValue = newValue;
+                outputObservable.valueHasMutated();
             } else {
                 var ko = projection.ko;
-                // The underlying array needs to be recalculated from scratch
-                outputArray.sort(projection.comparefn);
-                stateItems.sort(mappingToComparefn(function (stateItem) {
-                    return stateItem.mappingEvaluator();
-                }));
-
                 ko.utils.arrayForEach(stateItems, function (stateItem) {
                     stateItem.previousMappedValue = stateItem.mappingEvaluator();
                 });
+
+                // The underlying array needs to be recalculated from scratch
+                stateItems.sort(mappingToComparefn(function (stateItem) {
+                    return stateItem.previousMappedValue;
+                }));
+
+                outputArray = [];
+                ko.utils.arrayForEach(stateItems, function (stateItem) {
+                    outputArray.push(stateItem.inputItem);
+                });
+                outputObservable(outputArray);
             }
-            outputObservable.valueHasMutated();
         }
     };
 
