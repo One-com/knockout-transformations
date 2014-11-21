@@ -154,8 +154,13 @@
             }
 
             function Person(name, yearOfBirth) {
+                var that = this;
                 this.name = ko.observable(name);
                 this.yearOfBirth = ko.observable(yearOfBirth);
+
+                this.isBefore1900 = ko.pureComputed(function () {
+                    return that.yearOfBirth() < 1900;
+                });
             }
 
             Person.prototype.jasmineToString = function () {
@@ -299,6 +304,72 @@
                     sortDirection(1);
 
                     expect(variableSortedArray()).toEqual(sorted(sampleData, variablecomparefn));
+                });
+            });
+
+            describe('when chained on top of a "map" and "filter" projection', function () {
+                var mappedArray,
+                    mappedArrayIndex,
+                    filteredArrayLeft, filteredArrayRight,
+                    sortedArrayLeft, sortedArrayRight;
+
+                beforeEach(function () {
+                    function PersonView(person) {
+                        this.person = person;
+                    }
+
+                    mappedArray = sourceArray.map(function (person) {
+                        return new PersonView(person);
+                    });
+
+                    mappedArrayIndex = mappedArray.uniqueIndexBy(function (view) {
+                        return view.person.yearOfBirth() + ' ' + view.person.name();
+                    });
+
+                    filteredArrayLeft = mappedArray.filter(function (view) {
+                        return view.person.isBefore1900();
+                    });
+
+                    filteredArrayRight = mappedArray.filter(function (view) {
+                        return !view.person.isBefore1900();
+                    });
+
+                    sortedArrayLeft = filteredArrayLeft.sortBy(function (view) {
+                        return [view.person.yearOfBirth(), view.person.name()];
+                    }).extend({rateLimit: 10});
+
+                    sortedArrayRight = filteredArrayRight.sortBy(function (view) {
+                        return [view.person.yearOfBirth(), view.person.name()];
+                    }).extend({rateLimit: 10});
+                });
+
+                it('has the same amount of items in the filtered and sorted arrays', function () {
+                    expect(filteredArrayLeft().length).toEqual(sortedArrayLeft().length);
+
+                    expect(filteredArrayRight().length).toEqual(sortedArrayRight().length);
+                });
+
+                describe('when pushing a new item that first is in the left then in the right filtered array', function () {
+                    var person, personView;
+                    beforeEach(function () {
+                        person = new Person("Queen Victoria", 1819);
+                        sourceArray.push(person);
+
+                        person.yearOfBirth(1919);
+
+                        personView = mappedArrayIndex()[person.yearOfBirth() + ' ' + person.name()];
+                    });
+
+                    it('has the new item in the right sorted array only', function () {
+                        expect(sortedArrayLeft().indexOf(personView)).toEqual(-1);
+                        expect(sortedArrayRight().indexOf(personView)).toEqual(4);
+                    });
+
+                    it('has the same amount of items in the filtered and sorted arrays', function () {
+                        expect(filteredArrayLeft().length).toEqual(sortedArrayLeft().length);
+
+                        expect(filteredArrayRight().length).toEqual(sortedArrayRight().length);
+                    });
                 });
             });
         });
