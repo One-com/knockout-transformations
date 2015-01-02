@@ -347,38 +347,71 @@ See the Apache Version 2.0 License for specific language governing permissions a
         });
     }
 
+    function sortingKeysEquals(aSortKeys, bSortKeys) {
+        var Descending = SortByProjection.Descending;
+        if (!Array.isArray(aSortKeys)) {
+            aSortKeys = [aSortKeys];
+            bSortKeys = [bSortKeys];
+        }
+
+        var aSortKey, bSortKey;
+
+        for (var i = 0; i < aSortKeys.length; i += 1) {
+            aSortKey = aSortKeys[i];
+            bSortKey = bSortKeys[i];
+            if (aSortKeys instanceof Descending) {
+                if (bSortKeys instanceof Descending) {
+                    aSortKey = aSortKey.value;
+                    bSortKey = bSortKey.value;
+                } else {
+                    return false;
+                }
+            }
+
+            if (aSortKeys !== bSortKeys) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    function compareSortingKeys(aSortKeys, bSortKeys) {
+        var Descending = SortByProjection.Descending;
+        if (!Array.isArray(aSortKeys)) {
+            aSortKeys = [aSortKeys];
+            bSortKeys = [bSortKeys];
+        }
+
+        var aSortKey, bSortKey;
+
+        for (var i = 0; i < aSortKeys.length; i += 1) {
+            aSortKey = aSortKeys[i];
+            bSortKey = bSortKeys[i];
+            if (aSortKey instanceof Descending) {
+                if (aSortKey.value > bSortKey.value) {
+                    return -1;
+                } else if (aSortKey.value < bSortKey.value) {
+                    return 1;
+                }
+            } else {
+                if (aSortKey < bSortKey) {
+                    return -1;
+                } else if (aSortKey > bSortKey) {
+                    return 1;
+                }
+            }
+        }
+        return 0;
+    }
+
     // Sorting
     function mappingToComparefn(mapping) {
         var Descending = SortByProjection.Descending;
         return function (a, b) {
             var aSortKeys = mapping(a, Descending.create);
             var bSortKeys = mapping(b, Descending.create);
-
-            if (!Array.isArray(aSortKeys)) {
-                aSortKeys = [aSortKeys];
-                bSortKeys = [bSortKeys];
-            }
-
-            var aSortKey, bSortKey;
-
-            for (var i = 0; i < aSortKeys.length; i += 1) {
-                aSortKey = aSortKeys[i];
-                bSortKey = bSortKeys[i];
-                if (aSortKey instanceof Descending) {
-                    if (aSortKey.value > bSortKey.value) {
-                        return -1;
-                    } else if (aSortKey.value < bSortKey.value) {
-                        return 1;
-                    }
-                } else {
-                    if (aSortKey < bSortKey) {
-                        return -1;
-                    } else if (aSortKey > bSortKey) {
-                        return 1;
-                    }
-                }
-            }
-            return 0;
+            return compareSortingKeys(aSortKeys, bSortKeys);
         };
     }
 
@@ -474,7 +507,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
     };
 
     SortedStateItem.prototype.onMappingResultChanged = function (newValue) {
-        if (newValue !== this.previousMappedValue) {
+        if (!sortingKeysEquals(newValue, this.previousMappedValue)) {
             var projection = this.projection;
             var outputObservable = projection.outputObservable;
             var outputArray = outputObservable.peek();
@@ -482,16 +515,36 @@ See the Apache Version 2.0 License for specific language governing permissions a
             var oldIndex = binaryIndexOf(stateItems, this, mappingToComparefn(function (stateItem) {
                 return stateItem.previousMappedValue;
             }));
-            outputObservable.valueWillMutate();
-            outputArray.splice(oldIndex, 1);
-            stateItems.splice(oldIndex, 1);
 
-            var index = findInsertionIndex(outputArray, this.inputItem, projection.comparefn);
-            outputArray.splice(index, 0, this.inputItem);
-            stateItems.splice(index, 0, this);
+            if (stateItems[oldIndex] === this) {
+                outputObservable.valueWillMutate();
+                // It seems the sort order of the underlying array is still usable
+                outputArray.splice(oldIndex, 1);
+                stateItems.splice(oldIndex, 1);
 
-            this.previousMappedValue = newValue;
-            outputObservable.valueHasMutated();
+                var index = findInsertionIndex(outputArray, this.inputItem, projection.comparefn);
+                outputArray.splice(index, 0, this.inputItem);
+                stateItems.splice(index, 0, this);
+
+                this.previousMappedValue = newValue;
+                outputObservable.valueHasMutated();
+            } else {
+                var ko = projection.ko;
+                ko.utils.arrayForEach(stateItems, function (stateItem) {
+                    stateItem.previousMappedValue = stateItem.mappingEvaluator();
+                });
+
+                // The underlying array needs to be recalculated from scratch
+                stateItems.sort(mappingToComparefn(function (stateItem) {
+                    return stateItem.previousMappedValue;
+                }));
+
+                outputArray = [];
+                ko.utils.arrayForEach(stateItems, function (stateItem) {
+                    outputArray.push(stateItem.inputItem);
+                });
+                outputObservable(outputArray);
+            }
         }
     };
 
