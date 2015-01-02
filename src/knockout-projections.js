@@ -373,7 +373,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
             }
         }
 
-        return false;
+        return true;
     }
 
     function compareSortingKeys(aSortKeys, bSortKeys) {
