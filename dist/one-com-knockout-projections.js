@@ -1,4 +1,4 @@
-/*! Knockout projections plugin - version 1.3.1
+/*! Knockout projections plugin - version 1.3.3
 ------------------------------------------------------------------------------
 Copyright (c) Microsoft Corporation
 All rights reserved.
@@ -359,8 +359,8 @@ See the Apache Version 2.0 License for specific language governing permissions a
         for (var i = 0; i < aSortKeys.length; i += 1) {
             aSortKey = aSortKeys[i];
             bSortKey = bSortKeys[i];
-            if (aSortKeys instanceof Descending) {
-                if (bSortKeys instanceof Descending) {
+            if (aSortKey instanceof Descending) {
+                if (bSortKey instanceof Descending) {
                     aSortKey = aSortKey.value;
                     bSortKey = bSortKey.value;
                 } else {
