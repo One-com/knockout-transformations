@@ -162,7 +162,7 @@ The sorted list is only updated when items are added or removed and when propert
 This projection provides you with live updated index on a key returned
 by the given function. In contrast to the `map`, `filter` and `sortBy`
 this projection returns an object and is therefore not a candidate for
-changing.
+chaining.
 
 ```js
 var squareIndex = squares.indexBy(function (square) {
