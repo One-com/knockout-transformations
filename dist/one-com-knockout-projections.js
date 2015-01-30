@@ -1,4 +1,4 @@
-/*! Knockout projections plugin - version 1.5.1
+/*! Knockout projections plugin - version 1.5.2
 ------------------------------------------------------------------------------
 Copyright (c) Microsoft Corporation
 All rights reserved.
@@ -645,12 +645,27 @@ See the Apache Version 2.0 License for specific language governing permissions a
             }
         });
 
-        ko.utils.arrayForEach(addQueue, function (diffEntry) {
-            var index = findInsertionIndex(outputArray, diffEntry.value, that.comparefn);
-            var stateItem = new SortedStateItem(that, diffEntry.value);
-            outputArray.splice(index, 0, stateItem.inputItem);
-            that.stateItems.splice(index, 0, stateItem);
-        });
+        if (deleteQueue.length === 0 && this.stateItems.length === 0) {
+            // Adding to an empty array
+            this.stateItems = ko.utils.arrayMap(addQueue, function (diffEntry) {
+                return new SortedStateItem(that, diffEntry.value);
+            });
+
+            this.stateItems.sort(function (a, b) {
+                return compareSortingKeys(a.mappedValueComputed(), b.mappedValueComputed());
+            });
+
+            ko.utils.arrayForEach(this.stateItems, function (stateItem) {
+                outputArray.push(stateItem.inputItem);
+            });
+        } else {
+            ko.utils.arrayForEach(addQueue, function (diffEntry) {
+                var index = findInsertionIndex(outputArray, diffEntry.value, that.comparefn);
+                var stateItem = new SortedStateItem(that, diffEntry.value);
+                outputArray.splice(index, 0, stateItem.inputItem);
+                that.stateItems.splice(index, 0, stateItem);
+            });
+        }
 
         this.outputObservable.valueHasMutated();
     };
