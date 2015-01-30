@@ -501,7 +501,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         this.projection = projection;
         this.inputItem = inputItem;
 
-        this.mappedValueComputed = ko.pureComputed(this.mappingEvaluator, this);
+        this.mappedValueComputed = ko.computed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
@@ -849,7 +849,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
     function IndexedStateItem(projection, inputItem) {
         this.projection = projection;
         this.inputItem = inputItem;
-        this.mappedValueComputed = projection.ko.pureComputed(this.mappingEvaluator, this);
+        this.mappedValueComputed = projection.ko.computed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
