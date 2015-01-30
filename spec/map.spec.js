@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------
 Copyright (c) Microsoft Corporation
 All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 THIS CODE IS PROVIDED *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT.
 See the Apache Version 2.0 License for specific language governing permissions and limitations under the License.
 ------------------------------------------------------------------------------
@@ -13,7 +13,6 @@ See the Apache Version 2.0 License for specific language governing permissions a
         sampleData = ['Alpha', 'Beta', 'Gamma'];
 
     describe("Map", function () {
-
         it("returns a readonly computed observable array", function() {
             var sourceArray = ko.observableArray(sampleData.slice(0)),
                 mappedArray = sourceArray.map(function(item) { return item.length; });
@@ -181,7 +180,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
             megatron.age(7);
             expect(log.length).toBe(3);
             expect(mapCallsCount).toBe(5);
-            expect(mappedArray()).toEqual(['Bert is age 555', 'Mollie is age 246', 'Megatron is age 7']);            
+            expect(mappedArray()).toEqual(['Bert is age 555', 'Mollie is age 246', 'Megatron is age 7']);
         });
 
         it("supplies an observable index value that can be read in mappings", function() {
@@ -212,7 +211,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
             // Check that indexes are updated following a move
             sourceArray(['First', 'Gamma', 'Alpha']);
             expect(mappedArray()).toEqual(['Item 0 is First', 'Item 1 is Gamma', 'Item 2 is Alpha']);
-            expect(mapCallsCount).toBe(9); // Remapped Alpha and Gamma because their indexes changed            
+            expect(mapCallsCount).toBe(9); // Remapped Alpha and Gamma because their indexes changed
         });
 
         it("excludes any mapped values that match the private exclusion marker", function() {
@@ -268,23 +267,23 @@ See the Apache Version 2.0 License for specific language governing permissions a
             sourceArray([alpha, beta, epsilon, gamma, delta]);
             expect(mappedArray()).toEqual(['0: Alpha is age 100', '1: Epsilon is age 104', '2: Gamma is age 200']);
             expect(mapCallsCount).toBe(15); // Epsilon and Gamma had their indexes changed
-            
+
             // Note that in the above case, Delta isn't remapped at all, because last time its evaluator ran,
             // it returned the exclusion marker without even reading index(), so it has no dependency on index.
             // However, we can still bring it back and cause it to start responding to index changes:
             delta.age(500);
             expect(mappedArray()).toEqual(['0: Alpha is age 100', '1: Epsilon is age 104', '2: Gamma is age 200', '3: Delta is age 500']);
             expect(mapCallsCount).toBe(16); // Delta was remapped
-            
+
             // Try an arbitrary more complex combination of moves too
             sourceArray([gamma, beta, alpha, delta, epsilon]);
             expect(mappedArray()).toEqual(['0: Gamma is age 200', '1: Alpha is age 100', '2: Delta is age 500', '3: Epsilon is age 104']);
             expect(mapCallsCount).toBe(20); // The four included items were remapped
-        
+
             // Try deleting an item that was already filtered out
             sourceArray.splice(1, 1);
             expect(mappedArray()).toEqual(['0: Gamma is age 200', '1: Alpha is age 100', '2: Delta is age 500', '3: Epsilon is age 104']);
-            expect(mapCallsCount).toBe(20); // No remapping needed        
+            expect(mapCallsCount).toBe(20); // No remapping needed
         });
 
         it("disposes subscriptions when items are removed, and when the whole thing is disposed", function() {
@@ -317,7 +316,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
             // KO core's internal 'change' subscription for trackArrayChanges is not disposed (but will be
             // GCed when the array itself is). A possible future optimization for KO core would be to
             // remove/re-add trackArrayChanges based on whether num(trackArrayChange subscriptions) is zero.
-            expect(sourceArray.getSubscriptionsCount()).toBe(1); 
+            expect(sourceArray.getSubscriptionsCount()).toBe(1);
         });
 
         it("is possible to nest mappings", function() {
@@ -407,7 +406,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
             // See that disposing the whole mapped array also triggers the disposeItem callbacks
             mappedArray.dispose();
             expect(modelItem.name.getSubscriptionsCount()).toBe(0);
-            expect(disposedItems).toEqual(['ANNIE', 'CLARABEL']);            
+            expect(disposedItems).toEqual(['ANNIE', 'CLARABEL']);
         });
 
         it("calls 'disposeItem' when items are being replaced in-place", function() {
@@ -487,7 +486,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
                         };
                     }
                 });
-            
+
             expect(mappedArray()).toEqual(['ALPHA', 'BETA', 'GAMMA']);
             expect(perItemResources).toEqual({
                 alpha: { disposed: false },
@@ -568,6 +567,32 @@ See the Apache Version 2.0 License for specific language governing permissions a
             mappedArray.dispose();
             expect(mappedArray()).toEqual([constantMappedValue, constantMappedValue]);
             expect(disposeCount).toEqual(6);
+        });
+
+        it('supports a throttle option', function () {
+            jasmine.Clock.useMock();
+            var underlyingArray = ko.observableArray([1, 2, 3]);
+
+            var factor = ko.observable(1);
+            var mappedArray = underlyingArray.map({
+                mapping: function (x) {
+                    return x * factor();
+                },
+                throttle: 200
+            });
+            var spy = jasmine.createSpy('subscription');
+            mappedArray.subscribe(spy);
+
+            expect(mappedArray()).toEqual(underlyingArray());
+
+            factor(5);
+            expect(spy.callCount).toEqual(0);
+
+            jasmine.Clock.tick(201);
+
+            expect(spy.callCount).toEqual(1);
+
+            expect(mappedArray()).toEqual([5, 10, 15]);
         });
 
         it("is mandatory to specify 'mapping' or 'mappingWithDisposeCallback'", function() {

@@ -565,5 +565,53 @@
                 });
             });
         });
+
+        it('supports a throttle option', function () {
+            jasmine.Clock.useMock();
+            var underlyingArray = ko.observableArray([5, 6, 2, 5, 8, 3, 1, 2, 7, 7, 1, 0, 9, 3, 6, 4]);
+
+            var prefix = ko.observable('number: ');
+            var sortedArray = underlyingArray.indexBy({
+                mapping: function (x) {
+                    return prefix() + x;
+                },
+                throttle: 200
+            });
+            var spy = jasmine.createSpy('subscription');
+            sortedArray.subscribe(spy);
+
+            expect(sortedArray()).toEqual({
+                'number: 5': [5, 5],
+                'number: 6': [6, 6],
+                'number: 2': [2, 2],
+                'number: 8': [8],
+                'number: 3': [3, 3],
+                'number: 1': [1, 1],
+                'number: 7': [7, 7],
+                'number: 0': [0],
+                'number: 9': [9],
+                'number: 4': [4]
+            });
+
+            prefix('id: ');
+            expect(spy.callCount).toEqual(0);
+
+            jasmine.Clock.tick(201);
+
+            expect(spy.callCount).toEqual(1);
+
+            expect(sortedArray()).toEqual({
+                'id: 5': [5, 5],
+                'id: 6': [6, 6],
+                'id: 2': [2, 2],
+                'id: 8': [8],
+                'id: 3': [3, 3],
+                'id: 1': [1, 1],
+                'id: 7': [7, 7],
+                'id: 0': [0],
+                'id: 9': [9],
+                'id: 4': [4]
+            });
+        });
     });
 }());

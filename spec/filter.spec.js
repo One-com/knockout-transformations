@@ -149,6 +149,31 @@ See the Apache Version 2.0 License for specific language governing permissions a
             expect(filterCallsCount).toBe(11); // Only Everest had to be refiltered
         });
 
+        it('supports a throttle option', function () {
+            jasmine.Clock.useMock();
+            var underlyingArray = ko.observableArray([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+            var modulus = ko.observable(1);
+            var filteredArray = underlyingArray.filter({
+                mapping: function (x) {
+                    return x % modulus() === 0;
+                },
+                throttle: 200
+            });
+            var spy = jasmine.createSpy('subscription');
+            filteredArray.subscribe(spy);
+
+            expect(filteredArray()).toEqual(underlyingArray());
+            modulus(3);
+            expect(spy.callCount).toEqual(0);
+
+            jasmine.Clock.tick(201);
+
+            expect(spy.callCount).toEqual(1);
+
+            expect(filteredArray()).toEqual([0, 3, 6, 9]);
+        });
+
         describe('group inclussion example', function () {
             var persons, groups, person;
 

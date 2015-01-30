@@ -373,5 +373,30 @@
                 });
             });
         });
+
+        it('supports a throttle option', function () {
+            jasmine.Clock.useMock();
+            var underlyingArray = ko.observableArray([ 0, 6, 5, 1, 3, 7, 2, 8, 9, 4 ]);
+
+            var descending = ko.observable(false);
+            var sortedArray = underlyingArray.sortBy({
+                mapping: function (x, decending) {
+                    return descending() ? decending(x) : x;
+                },
+                throttle: 200
+            });
+            var spy = jasmine.createSpy('subscription');
+            sortedArray.subscribe(spy);
+
+            expect(sortedArray()).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+            descending(true);
+            expect(spy.callCount).toEqual(0);
+
+            jasmine.Clock.tick(201);
+
+            expect(spy.callCount).toEqual(1);
+
+            expect(sortedArray()).toEqual([ 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]);
+        });
     });
 }());
