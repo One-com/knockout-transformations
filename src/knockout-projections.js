@@ -567,11 +567,17 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
         this.mapping = options.mapping;
         this.comparefn = mappingToComparefn(this.mapping);
-        this.outputObservable = ko.observable([].concat(inputObservableArray.peek()).sort(this.comparefn));
 
-        this.stateItems = ko.utils.arrayMap(this.outputObservable.peek(), function (inputItem) {
+        this.stateItems = ko.utils.arrayMap(inputObservableArray.peek(), function (inputItem) {
             return new SortedStateItem(that, inputItem);
         });
+        this.stateItems.sort(function (a, b) {
+            return compareSortingKeys(a.mappedValueComputed(), b.mappedValueComputed());
+        });
+
+        this.outputObservable = ko.observable(ko.utils.arrayMap(this.stateItems, function (stateItem) {
+            return stateItem.inputItem;
+        }));
 
         // If the input array changes structurally (items added or removed), update the outputs
         var inputArraySubscription = inputObservableArray.subscribe(this.onStructuralChange, this, 'arrayChange');
