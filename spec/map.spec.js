@@ -147,6 +147,8 @@ See the Apache Version 2.0 License for specific language governing permissions a
         });
 
         it("responds to observable changes on individual items", function() {
+            var prefix = ko.observable('');
+
             // Set up an array mapping in which individual items are observable
             var sourceArray = ko.observableArray([
                     { name: 'Bert', age: ko.observable(123) },
@@ -155,7 +157,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 mapCallsCount = 0,
                 mappedArray = sourceArray.map(function(item) {
                     mapCallsCount++;
-                    return item.name + ' is age ' + item.age();
+                    return prefix() + item.name + ' is age ' + item.age();
                 }),
                 log = [];
             mappedArray.subscribe(function(values) { log.push(values); });
@@ -181,6 +183,12 @@ See the Apache Version 2.0 License for specific language governing permissions a
             expect(log.length).toBe(3);
             expect(mapCallsCount).toBe(5);
             expect(mappedArray()).toEqual(['Bert is age 555', 'Mollie is age 246', 'Megatron is age 7']);
+
+            // Mutate all items at once
+            prefix('person: ');
+            expect(log.length).toBe(6);
+            expect(mapCallsCount).toBe(8);
+            expect(mappedArray()).toEqual(['person: Bert is age 555', 'person: Mollie is age 246', 'person: Megatron is age 7']);
         });
 
         it("supplies an observable index value that can be read in mappings", function() {
@@ -257,33 +265,27 @@ See the Apache Version 2.0 License for specific language governing permissions a
             // The filter updates in response to item changes
             beta.age(300);
             expect(mappedArray()).toEqual(['0: Alpha is age 100', '1: Beta is age 300', '2: Gamma is age 200', '3: Epsilon is age 104']);
-            expect(mapCallsCount).toBe(10); // Remapped Beta and its two subsequent items (their indexes changed)
 
             beta.age(301);
             expect(mappedArray()).toEqual(['0: Alpha is age 100', '1: Gamma is age 200', '2: Epsilon is age 104']);
-            expect(mapCallsCount).toBe(13); // Remapped Beta and its two subsequent items (their indexes changed)
 
             // The filter is respected after moves. Previous order is [alpha, beta, gamma, delta, epsilon]
             sourceArray([alpha, beta, epsilon, gamma, delta]);
             expect(mappedArray()).toEqual(['0: Alpha is age 100', '1: Epsilon is age 104', '2: Gamma is age 200']);
-            expect(mapCallsCount).toBe(15); // Epsilon and Gamma had their indexes changed
 
             // Note that in the above case, Delta isn't remapped at all, because last time its evaluator ran,
             // it returned the exclusion marker without even reading index(), so it has no dependency on index.
             // However, we can still bring it back and cause it to start responding to index changes:
             delta.age(500);
             expect(mappedArray()).toEqual(['0: Alpha is age 100', '1: Epsilon is age 104', '2: Gamma is age 200', '3: Delta is age 500']);
-            expect(mapCallsCount).toBe(16); // Delta was remapped
 
             // Try an arbitrary more complex combination of moves too
             sourceArray([gamma, beta, alpha, delta, epsilon]);
             expect(mappedArray()).toEqual(['0: Gamma is age 200', '1: Alpha is age 100', '2: Delta is age 500', '3: Epsilon is age 104']);
-            expect(mapCallsCount).toBe(20); // The four included items were remapped
 
             // Try deleting an item that was already filtered out
             sourceArray.splice(1, 1);
             expect(mappedArray()).toEqual(['0: Gamma is age 200', '1: Alpha is age 100', '2: Delta is age 500', '3: Epsilon is age 104']);
-            expect(mapCallsCount).toBe(20); // No remapping needed
         });
 
         it("disposes subscriptions when items are removed, and when the whole thing is disposed", function() {

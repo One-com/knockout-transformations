@@ -103,7 +103,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
             // Add one item
             var newItem = { height: ko.observable(10000) };
-            sourceArray.push(newItem)
+            sourceArray.push(newItem);
             expect(veryTallOnes()).toEqual([sampleData.everest, sampleData.aconcagua, sampleData.mckinley, newItem]);
             expect(filterCallsCount).toBe(8); // Only new item was filtered
 
@@ -116,37 +116,30 @@ See the Apache Version 2.0 License for specific language governing permissions a
         it("only issues notifications when some inclusion status has actually changed", function() {
             var sampleData = makeSampleData(),
                 sourceArray = ko.observableArray(sampleData.all),
-                filterCallsCount = 0,
                 outputNotifications = 0,
                 veryTallOnes = sourceArray.filter(function(item) {
-                    filterCallsCount++;
                     return item.height() > 6000;
                 });
             veryTallOnes.subscribe(function() { outputNotifications++ });
             expect(veryTallOnes()).toEqual([sampleData.everest, sampleData.aconcagua, sampleData.mckinley]);
-            expect(filterCallsCount).toBe(7); // All were filtered
 
             // Mutate one to make it become excluded
             sampleData.everest.height(10);
             expect(outputNotifications).toBe(1);
             expect(veryTallOnes()).toEqual([sampleData.aconcagua, sampleData.mckinley]);
-            expect(filterCallsCount).toBe(8); // Only Everest had to be refiltered
 
             // Mutate one to make it become included
             sampleData.puncakjaya.height(10000);
             expect(outputNotifications).toBe(2);
             expect(veryTallOnes()).toEqual([sampleData.aconcagua, sampleData.mckinley, sampleData.puncakjaya]);
-            expect(filterCallsCount).toBe(9); // Only Puncakjaya had to be refiltered
 
             // Mutate an included one in such a way that it remains included
             sampleData.mckinley.height(12345);
             expect(outputNotifications).toBe(2); // No new notifications
-            expect(filterCallsCount).toBe(10); // Only McKinley had to be refiltered
 
             // Mutate an excluded one in such a way that it remains excluded
             sampleData.everest.height(123);
             expect(outputNotifications).toBe(2); // No new notifications
-            expect(filterCallsCount).toBe(11); // Only Everest had to be refiltered
         });
 
         it('supports a throttle option', function () {
