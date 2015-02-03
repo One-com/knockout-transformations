@@ -1,8 +1,8 @@
 {
-  "name": "one-com-knockout-projections",
+  "name": "knockout-transformations",
   "version": "1.6.0",
-  "description": "Knockout.js observable arrays get smarter",
-  "main": "dist/knockout-projections.js",
+  "description": "Live transform methods for Knockout observable arrays",
+  "main": "dist/knockout-transformations.js",
   "directories": {
     "test": "test"
   },
@@ -19,11 +19,6 @@
     "grunt-jasmine-node": "~0.1.0",
     "grunt-string-replace": "~0.2.7"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": "",
-  "author": "Microsoft Corporation",
   "licenses": [
     {
       "type": "Apache 2.0",
