@@ -1,5 +1,5 @@
 (function() {
-    var ko = this.ko || require('../src/knockout-projections.js');
+    var ko = this.ko || require('../src/knockout-transformations.js');
 
     function Person(name, yearOfBirth) {
         this.name = ko.observable(name);

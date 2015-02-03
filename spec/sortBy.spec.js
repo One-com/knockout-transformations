@@ -1,5 +1,5 @@
 (function() {
-    var ko = this.ko || require('../src/knockout-projections.js');
+    var ko = this.ko || require('../src/knockout-transformations.js');
     function sorted(arr, comparefn) {
         return [].concat(arr).sort(comparefn);
     }
@@ -307,7 +307,7 @@
                 });
             });
 
-            describe('when chained on top of a "map" and "filter" projection', function () {
+            describe('when chained on top of a "map" and "filter" transformations', function () {
                 var mappedArray,
                     mappedArrayIndex,
                     filteredArrayLeft, filteredArrayRight,

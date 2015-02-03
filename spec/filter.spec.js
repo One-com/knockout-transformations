@@ -9,7 +9,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 */
 
 (function() {
-    var ko = this.ko || require('../src/knockout-projections.js'),
+    var ko = this.ko || require('../src/knockout-transformations.js'),
         makeSampleData = function() {
             var sampleData = {
                 everest: { height: ko.observable(8848) },

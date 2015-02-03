@@ -5,30 +5,39 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ```
 
-knockout-projections
+knockout-transformations
 ============
 
-Knockout.js observable arrays get smarter.
+Live transform methods for Knockout observable arrays.
 
-This plugin adds observable `map`, `filter` and `sortBy` features to observable arrays, so you can transform collections in arbitrary ways and have the results automatically update whenever the underlying source data changes.
+This plugin adds observable `map`, `filter`, `indexBy` and `sortBy` features to
+observable arrays, so you can transform collections in arbitrary ways
+and have the results automatically update whenever the underlying
+source data changes.
+
+The project initialy started out as a fork of
+https://github.com/SteveSanderson/knockout-projections and therefore
+owes a lot to this project.
 
 Installation
 ============
 
-Download a copy of `knockout-projections-x.y.z.js` from [the `dist` directory](https://github.com/SteveSanderson/knockout-projections/tree/master/dist) and reference it in your web application:
+Download a copy of `knockout-transformations-x.y.z.js` from [the `dist` directory](https://github.com/One-com/knockout-transformations/tree/master/dist) and reference it in your web application:
 
 ```html
 <!-- First reference KO itself -->
 <script src='knockout-x.y.z.js'></script>
-<!-- Then reference knockout-projections -->
-<script src='knockout-projections-x.y.z.js'></script>
+<!-- Then reference knockout-transformations -->
+<script src='knockout-transformations-x.y.z.js'></script>
 ```
 
 Be sure to reference it *after* you reference Knockout itself, and of course replace `x.y.z` with the version number of the file you downloaded.
 
-This Fork is also release to NPM under the name:
+If you are using NPM you can install knockout and knockout-transformations the following way:
 
-    one-com-knockout-projections
+    npm install knockout knockout-transformations
+
+Then just reference the distribution files from `node_modules`.
 
 Usage
 =====
@@ -166,9 +175,9 @@ The sorted list is only updated when items are added or removed and when propert
 
 **Indexing**
 
-This projection provides you with live updated index on a key returned
+This transformation provides you with live updated index on a key returned
 by the given function. In contrast to the `map`, `filter` and `sortBy`
-this projection returns an object and is therefore not a candidate for
+this transformation returns an object and is therefore not a candidate for
 chaining.
 
 ```js
@@ -286,8 +295,8 @@ Or you can make Grunt watch for changes to the sources/specs and auto-rebuild af
 
 The browser-ready output files will be dumped at the following locations:
 
- * `dist/knockout-projections.js`
- * `dist/knockout-projections.min.js`
+ * `dist/knockout-transformations.js`
+ * `dist/knockout-transformations.min.js`
 
 License - Apache 2.0
 ====================

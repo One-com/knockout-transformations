@@ -9,7 +9,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 */
 
 (function() {
-    var ko = this.ko || require('../src/knockout-projections.js'),
+    var ko = this.ko || require('../src/knockout-transformations.js'),
         sampleData = ['Alpha', 'Beta', 'Gamma'];
 
     describe("Map", function () {
@@ -237,7 +237,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 mappedArray = sourceArray.map(function(item, index) {
                     // Include only items with even age
                     mapCallsCount++;
-                    return item.age() % 2 === 0 ? (index() + ': ' + item.name + ' is age ' + item.age()) : ko.projections._exclusionMarker;
+                    return item.age() % 2 === 0 ? (index() + ': ' + item.name + ' is age ' + item.age()) : ko.transformations._exclusionMarker;
                 });
             expect(mappedArray()).toEqual(['0: Alpha is age 100', '1: Gamma is age 102']);
             expect(mapCallsCount).toBe(3); // All items mapped

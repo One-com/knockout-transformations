@@ -1,4 +1,4 @@
-/*! Knockout projections plugin - version 1.6.0
+/*! Knockout transformations plugin - version @@version@@
 ------------------------------------------------------------------------------
 Copyright (c) Microsoft Corporation
 All rights reserved.
@@ -335,8 +335,8 @@ See the Apache Version 2.0 License for specific language governing permissions a
             originalDispose.call(this, arguments);
         };
 
-        // Make projections chainable
-        addProjectionFunctions(ko, returnValue);
+        // Make transformations chainable
+        addTransformationFunctions(ko, returnValue);
 
         return returnValue;
     }
@@ -357,7 +357,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
     }
 
     function sortingKeysEquals(aSortKeys, bSortKeys) {
-        var Descending = SortByProjection.Descending;
+        var Descending = SortByTransformation.Descending;
         if (!Array.isArray(aSortKeys)) {
             aSortKeys = [aSortKeys];
             bSortKeys = [bSortKeys];
@@ -386,7 +386,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
     }
 
     function compareSortingKeys(aSortKeys, bSortKeys) {
-        var Descending = SortByProjection.Descending;
+        var Descending = SortByTransformation.Descending;
         if (!Array.isArray(aSortKeys)) {
             aSortKeys = [aSortKeys];
             bSortKeys = [bSortKeys];
@@ -416,7 +416,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
 
     // Sorting
     function mappingToComparefn(mapping) {
-        var Descending = SortByProjection.Descending;
+        var Descending = SortByTransformation.Descending;
         return function (a, b) {
             var aSortKeys = mapping(a, Descending.create);
             var bSortKeys = mapping(b, Descending.create);
@@ -493,9 +493,9 @@ See the Apache Version 2.0 License for specific language governing permissions a
         }
     }
 
-    function SortedStateItem(projection, inputItem) {
-        var ko = projection.ko;
-        this.projection = projection;
+    function SortedStateItem(transformation, inputItem) {
+        var ko = transformation.ko;
+        this.transformation = transformation;
         this.inputItem = inputItem;
 
         this.mappedValueComputed = ko.computed(this.mappingEvaluator, this);
@@ -506,21 +506,21 @@ See the Apache Version 2.0 License for specific language governing permissions a
     SortedStateItem.prototype.dispose = function() {
         var mappedItem = this.mappedValueComputed();
         this.mappedValueComputed.dispose();
-        if (this.projection.options.disposeItem) {
-            this.projection.options.disposeItem(mappedItem);
+        if (this.transformation.options.disposeItem) {
+            this.transformation.options.disposeItem(mappedItem);
         }
     };
 
     SortedStateItem.prototype.mappingEvaluator = function() {
-        return this.projection.mapping(this.inputItem, SortByProjection.Descending.create);
+        return this.transformation.mapping(this.inputItem, SortByTransformation.Descending.create);
     };
 
     SortedStateItem.prototype.onMappingResultChanged = function (newValue) {
         if (!sortingKeysEquals(newValue, this.previousMappedValue)) {
-            var projection = this.projection;
-            var outputObservable = projection.outputObservable;
+            var transformation = this.transformation;
+            var outputObservable = transformation.outputObservable;
             var outputArray = outputObservable.peek();
-            var stateItems = projection.stateItems;
+            var stateItems = transformation.stateItems;
             var oldIndex = binaryIndexOf(stateItems, this, mappingToComparefn(function (stateItem) {
                 return stateItem.previousMappedValue;
             }));
@@ -531,14 +531,14 @@ See the Apache Version 2.0 License for specific language governing permissions a
                 outputArray.splice(oldIndex, 1);
                 stateItems.splice(oldIndex, 1);
 
-                var index = findInsertionIndex(outputArray, this.inputItem, projection.comparefn);
+                var index = findInsertionIndex(outputArray, this.inputItem, transformation.comparefn);
                 outputArray.splice(index, 0, this.inputItem);
                 stateItems.splice(index, 0, this);
 
                 this.previousMappedValue = newValue;
                 outputObservable.valueHasMutated();
             } else {
-                var ko = projection.ko;
+                var ko = transformation.ko;
                 ko.utils.arrayForEach(stateItems, function (stateItem) {
                     stateItem.previousMappedValue = stateItem.mappingEvaluator();
                 });
@@ -557,7 +557,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         }
     };
 
-    function SortByProjection(ko, inputObservableArray, options) {
+    function SortByTransformation(ko, inputObservableArray, options) {
         var that = this;
         this.ko = ko;
         this.options = options;
@@ -596,19 +596,19 @@ See the Apache Version 2.0 License for specific language governing permissions a
             originalDispose.call(this, arguments);
         };
 
-        // Make projections chainable
-        addProjectionFunctions(ko, this.output);
+        // Make transformations chainable
+        addTransformationFunctions(ko, this.output);
     }
 
-    SortByProjection.Descending = function Descending(value) {
+    SortByTransformation.Descending = function Descending(value) {
         this.value = value;
     };
 
-    SortByProjection.Descending.create = function (value) {
-        return new SortByProjection.Descending(value);
+    SortByTransformation.Descending.create = function (value) {
+        return new SortByTransformation.Descending(value);
     };
 
-    SortByProjection.prototype.onStructuralChange = function (diff) {
+    SortByTransformation.prototype.onStructuralChange = function (diff) {
         if (!diff.length) {
             return;
         }
@@ -673,14 +673,14 @@ See the Apache Version 2.0 License for specific language governing permissions a
             options = { mapping: options };
         }
 
-        var projection = new SortByProjection(ko, this, options);
+        var transformation = new SortByTransformation(ko, this, options);
 
-        return projection.output;
+        return transformation.output;
     }
 
     // Indexing
 
-    function IndexByProjection(ko, inputObservableArray, options) {
+    function IndexByTransformation(ko, inputObservableArray, options) {
         var that = this;
         this.ko = ko;
         this.options = options;
@@ -718,7 +718,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         };
     }
 
-    IndexByProjection.prototype.arraysEqual = function (a, b) {
+    IndexByTransformation.prototype.arraysEqual = function (a, b) {
         var ko = this.ko;
         if (a === b) {
             return true;
@@ -744,7 +744,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
     };
 
 
-    IndexByProjection.prototype.appendToEntry = function (obj, key, item) {
+    IndexByTransformation.prototype.appendToEntry = function (obj, key, item) {
         var entry = obj[key];
         if (!entry) {
             entry = obj[key] = [];
@@ -752,7 +752,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         entry.push(item);
     };
 
-    IndexByProjection.prototype.removeFromEntry = function (obj, key, item) {
+    IndexByTransformation.prototype.removeFromEntry = function (obj, key, item) {
         var entry = obj[key];
         if (entry) {
             var index = entry.indexOf(item);
@@ -766,20 +766,20 @@ See the Apache Version 2.0 License for specific language governing permissions a
         }
     };
 
-    IndexByProjection.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
+    IndexByTransformation.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
         this.appendToEntry(indexMapping, key, item);
     };
 
-    IndexByProjection.prototype.removeByKeyAndItem = function (indexMapping, key, item) {
+    IndexByTransformation.prototype.removeByKeyAndItem = function (indexMapping, key, item) {
         this.removeFromEntry(indexMapping, key, item);
     };
 
-    IndexByProjection.prototype.addStateItemToIndex = function (stateItem) {
+    IndexByTransformation.prototype.addStateItemToIndex = function (stateItem) {
         var key = this.mapping(stateItem.inputItem)[0];
         this.appendToEntry(this.stateItems, key, stateItem);
     };
 
-    IndexByProjection.prototype.findStateItem = function (inputItem) {
+    IndexByTransformation.prototype.findStateItem = function (inputItem) {
         var ko = this.ko;
         var key = this.mapping(inputItem)[0];
         var entry = this.stateItems[key];
@@ -793,13 +793,13 @@ See the Apache Version 2.0 License for specific language governing permissions a
         return result[0] || null;
     };
 
-    IndexByProjection.prototype.removeStateItem = function (stateItem) {
+    IndexByTransformation.prototype.removeStateItem = function (stateItem) {
         var key = stateItem.mappedValueComputed()[0];
         this.removeFromEntry(this.stateItems, key, stateItem);
         stateItem.dispose();
     };
 
-    IndexByProjection.prototype.addToIndex = function (inputItem) {
+    IndexByTransformation.prototype.addToIndex = function (inputItem) {
         var that = this;
         var ko = this.ko;
         var keys = this.mapping(inputItem);
@@ -811,7 +811,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         this.addStateItemToIndex(stateItem);
     };
 
-    IndexByProjection.prototype.removeItem = function (inputItem) {
+    IndexByTransformation.prototype.removeItem = function (inputItem) {
         var that = this;
         var ko = this.ko;
         var stateItem = this.findStateItem(inputItem);
@@ -825,7 +825,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         }
     };
 
-    IndexByProjection.prototype.onStructuralChange = function (diff) {
+    IndexByTransformation.prototype.onStructuralChange = function (diff) {
         var that = this;
         if (!diff.length) {
             return;
@@ -858,10 +858,10 @@ See the Apache Version 2.0 License for specific language governing permissions a
         this.outputObservable.valueHasMutated();
     };
 
-    function IndexedStateItem(projection, inputItem) {
-        this.projection = projection;
+    function IndexedStateItem(transformation, inputItem) {
+        this.transformation = transformation;
         this.inputItem = inputItem;
-        this.mappedValueComputed = projection.ko.computed(this.mappingEvaluator, this);
+        this.mappedValueComputed = transformation.ko.computed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
@@ -870,37 +870,37 @@ See the Apache Version 2.0 License for specific language governing permissions a
         var mappedItem = this.mappedValueComputed();
         this.mappedValueComputed.dispose();
 
-        if (this.projection.options.disposeItem) {
-            this.projection.options.disposeItem(mappedItem);
+        if (this.transformation.options.disposeItem) {
+            this.transformation.options.disposeItem(mappedItem);
         }
     };
 
     IndexedStateItem.prototype.mappingEvaluator = function() {
-        return this.projection.mapping(this.inputItem);
+        return this.transformation.mapping(this.inputItem);
     };
 
     IndexedStateItem.prototype.onMappingResultChanged = function (newValue) {
-        var projection = this.projection;
-        if (!projection.arraysEqual(this.newValue, this.previousMappedValue)) {
-            var outputObservable = projection.outputObservable;
+        var transformation = this.transformation;
+        if (!transformation.arraysEqual(this.newValue, this.previousMappedValue)) {
+            var outputObservable = transformation.outputObservable;
             var output = outputObservable.peek();
             outputObservable.valueWillMutate();
-            projection.removeByKeyAndItem(output, this.previousMappedValue, this.inputItem);
-            projection.removeByKeyAndItem(projection.stateItems, this.previousMappedValue, this);
-            projection.insertByKeyAndItem(output, newValue, this.inputItem);
-            projection.addStateItemToIndex(this);
+            transformation.removeByKeyAndItem(output, this.previousMappedValue, this.inputItem);
+            transformation.removeByKeyAndItem(transformation.stateItems, this.previousMappedValue, this);
+            transformation.insertByKeyAndItem(output, newValue, this.inputItem);
+            transformation.addStateItemToIndex(this);
             this.previousMappedValue = newValue;
             outputObservable.valueHasMutated();
         }
     };
 
-    function UniqueIndexByProjection(ko, inputObservableArray, options) {
-        IndexByProjection.call(this, ko, inputObservableArray, options);
+    function UniqueIndexByTransformation(ko, inputObservableArray, options) {
+        IndexByTransformation.call(this, ko, inputObservableArray, options);
     }
 
-    extend(UniqueIndexByProjection.prototype, IndexByProjection.prototype);
+    extend(UniqueIndexByTransformation.prototype, IndexByTransformation.prototype);
 
-    UniqueIndexByProjection.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
+    UniqueIndexByTransformation.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
         if (key in indexMapping) {
             throw new Error('Unique indexes requires items must map to different keys; duplicate key: ' + key);
         }
@@ -908,21 +908,21 @@ See the Apache Version 2.0 License for specific language governing permissions a
         indexMapping[key] = item;
     };
 
-    UniqueIndexByProjection.prototype.removeByKeyAndItem = function (indexMapping, key) {
+    UniqueIndexByTransformation.prototype.removeByKeyAndItem = function (indexMapping, key) {
         delete indexMapping[key];
     };
 
-    UniqueIndexByProjection.prototype.addStateItemToIndex = function (stateItem) {
+    UniqueIndexByTransformation.prototype.addStateItemToIndex = function (stateItem) {
         var key = stateItem.mappedValueComputed()[0];
         this.stateItems[key] = stateItem;
     };
 
-    UniqueIndexByProjection.prototype.findStateItem = function (inputItem) {
+    UniqueIndexByTransformation.prototype.findStateItem = function (inputItem) {
         var key = this.mapping(inputItem)[0];
         return this.stateItems[key] || null;
     };
 
-    UniqueIndexByProjection.prototype.removeStateItem = function (stateItem) {
+    UniqueIndexByTransformation.prototype.removeStateItem = function (stateItem) {
         var key = stateItem.mappedValueComputed()[0];
         if (this.stateItems[key] === stateItem) {
             delete this.stateItems[key];
@@ -930,7 +930,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         stateItem.dispose();
     };
 
-    UniqueIndexByProjection.prototype.addToIndex = function (inputItem) {
+    UniqueIndexByTransformation.prototype.addToIndex = function (inputItem) {
         var that = this;
         var ko = this.ko;
         var keys = this.mapping(inputItem);
@@ -942,7 +942,7 @@ See the Apache Version 2.0 License for specific language governing permissions a
         this.addStateItemToIndex(stateItem);
     };
 
-    UniqueIndexByProjection.prototype.removeItem = function (inputItem) {
+    UniqueIndexByTransformation.prototype.removeItem = function (inputItem) {
         var that = this;
         var ko = this.ko;
         var stateItem = this.findStateItem(inputItem);
@@ -956,8 +956,8 @@ See the Apache Version 2.0 License for specific language governing permissions a
         }
     };
 
-    function UniqueIndexedStateItem(projection, inputItem) {
-        IndexedStateItem.call(this, projection, inputItem);
+    function UniqueIndexedStateItem(transformation, inputItem) {
+        IndexedStateItem.call(this, transformation, inputItem);
     }
 
     extend(UniqueIndexedStateItem.prototype, IndexedStateItem.prototype);
@@ -968,11 +968,11 @@ See the Apache Version 2.0 License for specific language governing permissions a
             options = { mapping: options, unique: false };
         }
 
-        var projection = options.unique ?
-            new UniqueIndexByProjection(ko, this, options):
-            new IndexByProjection(ko, this, options);
+        var transformation = options.unique ?
+            new UniqueIndexByTransformation(ko, this, options):
+            new IndexByTransformation(ko, this, options);
 
-        return projection.output;
+        return transformation.output;
     }
 
     function observableArrayUniqueIndexBy(ko, options) {
@@ -982,38 +982,20 @@ See the Apache Version 2.0 License for specific language governing permissions a
         }
         options.unique = true;
 
-        var projection = new UniqueIndexByProjection(ko, this, options);
+        var transformation = new UniqueIndexByTransformation(ko, this, options);
 
-        return projection.output;
+        return transformation.output;
     }
 
-    // Attaching projection functions
+    // Attaching transformation functions
     // ------------------------------
     //
-    // Builds a collection of projection functions that can quickly be attached to any object.
+    // Builds a collection of transformation functions that can quickly be attached to any object.
     // The functions are predefined to retain 'this' and prefix the arguments list with the
     // relevant 'ko' instance.
 
-    var projectionFunctionsCacheName = '_ko.projections.cache';
-
-    function attachProjectionFunctionsCache(ko) {
-        // Wraps callback so that, when invoked, its arguments list is prefixed by 'ko' and 'this'
-        function makeCaller(ko, callback) {
-            return function() {
-                return callback.apply(this, [ko].concat(Array.prototype.slice.call(arguments, 0)));
-            };
-        }
-        ko[projectionFunctionsCacheName] = {
-            map: makeCaller(ko, observableArrayMap),
-            sortBy: makeCaller(ko, observableArraySortBy),
-            indexBy: makeCaller(ko, observableArrayIndexBy),
-            uniqueIndexBy: makeCaller(ko, observableArrayUniqueIndexBy),
-            filter: makeCaller(ko, observableArrayFilter)
-        };
-    }
-
-    function addProjectionFunctions(ko, target) {
-        ko.utils.extend(target, ko[projectionFunctionsCacheName]);
+    function addTransformationFunctions(ko, target) {
+        ko.utils.extend(target, ko.transformations.fn);
         return target; // Enable chaining
     }
 
@@ -1025,11 +1007,25 @@ See the Apache Version 2.0 License for specific language governing permissions a
     // instance of Knockout.js it can find.
 
     function attachToKo(ko) {
-        ko.projections = {
+        // Wraps callback so that, when invoked, its arguments list is prefixed by 'ko' and 'this'
+        function makeCaller(ko, callback) {
+            return function() {
+                return callback.apply(this, [ko].concat(Array.prototype.slice.call(arguments, 0)));
+            };
+        }
+
+        ko.transformations = ko.transformations || {
+            fn: {},
             _exclusionMarker: exclusionMarker
         };
-        attachProjectionFunctionsCache(ko);
-        addProjectionFunctions(ko, ko.observableArray.fn); // Make all observable arrays projectable
+        ko.utils.extend(ko.transformations.fn, {
+            map: makeCaller(ko, observableArrayMap),
+            sortBy: makeCaller(ko, observableArraySortBy),
+            indexBy: makeCaller(ko, observableArrayIndexBy),
+            uniqueIndexBy: makeCaller(ko, observableArrayUniqueIndexBy),
+            filter: makeCaller(ko, observableArrayFilter),
+        });
+        addTransformationFunctions(ko, ko.observableArray.fn); // Make all observable arrays projectable
     }
 
     // Determines which module loading scenario we're in, grabs dependencies, and attaches to KO
