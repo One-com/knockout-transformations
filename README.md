@@ -1,3 +1,10 @@
+```
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!  Don't mind the naming mess, we are in the middle of moving  !!
+!!     from https://github.com/One-com/knockout-projections     !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
 knockout-projections
 ============
 
