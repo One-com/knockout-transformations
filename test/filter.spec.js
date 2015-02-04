@@ -1,5 +1,5 @@
 var ko = require('knockout');
-require('../src/knockout-transformations.js');
+require('../lib/knockout-transformations.js');
 var expect = require('unexpected').clone()
     .installPlugin(require('unexpected-sinon'));
 var sinon = require('sinon');
