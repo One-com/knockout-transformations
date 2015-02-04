@@ -71,12 +71,13 @@ module.exports = function(grunt) {
                 }
             }
         },
-        jasmine_node: {
-            specNameMatcher: "spec",
-            projectRoot: ".",
-            requirejs: false,
-            useHelpers: true,
-            forceExit: true
+        mochaTest: {
+            test: {
+                options: {
+                    reporter: 'spec',
+                },
+                src: ['test/**/*.spec.js']
+            },
         },
         watch: {
             scripts: {
@@ -90,11 +91,11 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-concat');
-    grunt.loadNpmTasks('grunt-jasmine-node');
+    grunt.loadNpmTasks('grunt-mocha-test');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-string-replace');
 
-    grunt.registerTask('test', ['jasmine_node']);
+    grunt.registerTask('test', ['mochaTest']);
     grunt.registerTask('build', ['concat', 'string-replace', 'uglify']);
     grunt.registerTask('default', ['jshint', 'test', 'build']);
 };

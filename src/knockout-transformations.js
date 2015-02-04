@@ -16,21 +16,19 @@ limitations under the License.
 ------------------------------------------------------------------------------
 */
 
-(function(global, undefined) {
-    'use strict';
-
-    function extend(obj) {
-        var args = Array.prototype.slice.call(arguments, 1);
-        args.forEach(function (source) {
-            if (source) {
-                for (var prop in source) {
-                    obj[prop] = source[prop];
-                }
-            }
-        });
-        return obj;
+(function (factory) {
+    // Support three module loading scenarios
+    if (typeof require === 'function' && typeof exports === 'object' && typeof module === 'object') {
+        // CommonJS/Node.js
+        factory(require('knockout'));
+    } else if (typeof define === "function" && define.amd) {
+        // AMD anonymous module with hard-coded dependency on "knockout"
+        define(["knockout"], factory);
+    } else {
+        // <script> tag: use the global `ko`
+        factory(ko);
     }
-
+}(function (ko) {
     var exclusionMarker = {};
 
     function StateItem(ko, inputItem, initialStateArrayIndex, initialOutputArrayIndex, mappingOptions, arrayOfState, outputObservableArray) {
@@ -906,7 +904,7 @@ limitations under the License.
         IndexByTransformation.call(this, ko, inputObservableArray, options);
     }
 
-    extend(UniqueIndexByTransformation.prototype, IndexByTransformation.prototype);
+    ko.utils.extend(UniqueIndexByTransformation.prototype, IndexByTransformation.prototype);
 
     UniqueIndexByTransformation.prototype.insertByKeyAndItem = function (indexMapping, key, item) {
         if (key in indexMapping) {
@@ -968,7 +966,7 @@ limitations under the License.
         IndexedStateItem.call(this, transformation, inputItem);
     }
 
-    extend(UniqueIndexedStateItem.prototype, IndexedStateItem.prototype);
+    ko.utils.extend(UniqueIndexedStateItem.prototype, IndexedStateItem.prototype);
 
     function observableArrayIndexBy(ko, options) {
         // Shorthand syntax - just pass a function instead of an options object
@@ -1036,21 +1034,5 @@ limitations under the License.
         addTransformationFunctions(ko, ko.observableArray.fn); // Make all observable arrays projectable
     }
 
-    // Determines which module loading scenario we're in, grabs dependencies, and attaches to KO
-    function prepareExports() {
-        if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-            // Node.js case - load KO synchronously
-            var ko = require('knockout');
-            attachToKo(ko);
-            module.exports = ko;
-        } else if (typeof define === 'function' && define.amd) {
-            define(['knockout'], attachToKo);
-        } else if ('ko' in global) {
-            // Non-module case - attach to the global instance
-            attachToKo(global.ko);
-        }
-    }
-
-    prepareExports();
-
-})(this);
+    attachToKo(ko);
+}));
