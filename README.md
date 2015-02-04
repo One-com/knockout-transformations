@@ -10,14 +10,9 @@ knockout-transformations
 
 Live transform methods for Knockout observable arrays.
 
-This plugin adds observable `map`, `filter`, `indexBy` and `sortBy` features to
-observable arrays, so you can transform collections in arbitrary ways
-and have the results automatically update whenever the underlying
-source data changes.
+This plugin adds observable `map`, `filter`, `indexBy` and `sortBy` features to observable arrays, so you can transform collections in arbitrary ways and have the results automatically update whenever the underlying source data changes.
 
-The project initialy started out as a fork of
-https://github.com/SteveSanderson/knockout-projections and therefore
-owes a lot to this project.
+The project initialy started out as a fork of https://github.com/SteveSanderson/knockout-projections and therefore owes a lot to this project. This project is licensed under Apache 2.0 by Microsoft Corporation and the part of the code derived from this project is constrained by this license. The rest of the code is also licensed under Apache 2.0 by One.com.
 
 Installation
 ============
@@ -301,12 +296,10 @@ The browser-ready output files will be dumped at the following locations:
 License - Apache 2.0
 ====================
 
-Copyright (c) Microsoft Corporation
+Copyright 2015 One.com
 
-All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-THIS CODE IS PROVIDED *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT.
-
-See the Apache Version 2.0 License for specific language governing permissions and limitations under the License.
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
