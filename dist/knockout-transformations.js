@@ -15,7 +15,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ------------------------------------------------------------------------------
 */
-
 (function (factory) {
     // Support three module loading scenarios
     if (typeof require === 'function' && typeof exports === 'object' && typeof module === 'object') {
@@ -31,7 +30,7 @@ limitations under the License.
 }(function (ko) {
     var exclusionMarker = {};
 
-    function StateItem(ko, inputItem, initialStateArrayIndex, initialOutputArrayIndex, mappingOptions, arrayOfState, outputObservableArray) {
+    function StateItem(inputItem, initialStateArrayIndex, initialOutputArrayIndex, mappingOptions, arrayOfState, outputObservableArray) {
         // Capture state for later use
         this.inputItem = inputItem;
         this.stateArrayIndex = initialStateArrayIndex;
@@ -50,12 +49,12 @@ limitations under the License.
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
 
-    StateItem.prototype.dispose = function() {
+    StateItem.prototype.dispose = function () {
         this.mappedValueComputed.dispose();
         this.disposeResultFromMostRecentEvaluation();
     };
 
-    StateItem.prototype.disposeResultFromMostRecentEvaluation = function() {
+    StateItem.prototype.disposeResultFromMostRecentEvaluation = function () {
         if (this.disposeFuncFromMostRecentMapping) {
             this.disposeFuncFromMostRecentMapping();
             this.disposeFuncFromMostRecentMapping = null;
@@ -67,7 +66,7 @@ limitations under the License.
         }
     };
 
-    StateItem.prototype.mappingEvaluator = function() {
+    StateItem.prototype.mappingEvaluator = function () {
         if (this.isIncluded !== null) { // i.e., not first run
             // This is a replace-in-place, so call any dispose callbacks
             // we have for the earlier value
@@ -98,7 +97,7 @@ limitations under the License.
     StateItem.prototype.updateInclusion = function () {
         var outputArrayIndex = this.outputArrayIndex.peek();
         var outputArray = this.outputArray;
-        for (var iterationIndex = this.stateArrayIndex; iterationIndex < this.arrayOfState.length; iterationIndex++) {
+        for (var iterationIndex = this.stateArrayIndex; iterationIndex < this.arrayOfState.length; iterationIndex += 1) {
             var stateItem = this.arrayOfState[iterationIndex];
 
             stateItem.setOutputArrayIndexSilently(outputArrayIndex);
@@ -121,7 +120,7 @@ limitations under the License.
         }
     };
 
-    StateItem.prototype.onMappingResultChanged = function(newValue) {
+    StateItem.prototype.onMappingResultChanged = function (newValue) {
         if (newValue !== this.previousMappedValue) {
             if (!this.suppressNotification) {
                 this.outputObservableArray.valueWillMutate();
@@ -143,7 +142,7 @@ limitations under the License.
         }
     };
 
-    StateItem.prototype.setOutputArrayIndexSilently = function(newIndex) {
+    StateItem.prototype.setOutputArrayIndexSilently = function (newIndex) {
         // We only want to raise one output array notification per input array change,
         // so during processing, we suppress notifications
         this.suppressNotification = true;
@@ -165,12 +164,12 @@ limitations under the License.
         }
     }
 
-    function insertOutputItem(ko, diffEntry, movedStateItems, stateArrayIndex, outputArrayIndex, mappingOptions, arrayOfState, outputObservableArray, outputArray) {
+    function insertOutputItem(diffEntry, movedStateItems, stateArrayIndex, outputArrayIndex, mappingOptions, arrayOfState, outputObservableArray, outputArray) {
         // Retain the existing mapped value if this is a move, otherwise perform mapping
         var isMoved = typeof diffEntry.moved === 'number',
             stateItem = isMoved ?
                 movedStateItems[diffEntry.moved] :
-                new StateItem(ko, diffEntry.value, stateArrayIndex, outputArrayIndex, mappingOptions, arrayOfState, outputObservableArray);
+                new StateItem(diffEntry.value, stateArrayIndex, outputArrayIndex, mappingOptions, arrayOfState, outputObservableArray);
         arrayOfState.splice(stateArrayIndex, 0, stateItem);
 
         if (stateItem.isIncluded) {
@@ -212,7 +211,7 @@ limitations under the License.
     function makeLookupOfMovedStateItems(diff, arrayOfState) {
         // Before we mutate arrayOfComputedMappedValues at all, grab a reference to each moved item
         var movedStateItems = {};
-        for (var diffIndex = 0; diffIndex < diff.length; diffIndex++) {
+        for (var diffIndex = 0; diffIndex < diff.length; diffIndex += 1) {
             var diffEntry = diff[diffIndex];
             if (diffEntry.status === 'added' && (typeof diffEntry.moved === 'number')) {
                 movedStateItems[diffEntry.moved] = arrayOfState[diffEntry.moved];
@@ -235,8 +234,8 @@ limitations under the License.
         }
     }
 
-    function respondToArrayStructuralChanges(ko, inputObservableArray, arrayOfState, outputArray, outputObservableArray, mappingOptions) {
-        return inputObservableArray.subscribe(function(diff) {
+    function respondToArrayStructuralChanges(inputObservableArray, arrayOfState, outputArray, outputObservableArray, mappingOptions) {
+        return inputObservableArray.subscribe(function (diff) {
             if (!diff.length) {
                 return;
             }
@@ -252,31 +251,31 @@ limitations under the License.
             // Now iterate over the state array, at each stage checking whether the current item
             // is the next one to have been edited. We can skip all the state array items whose
             // indexes are less than the first edit index (i.e., diff[0].index).
-            for (var stateArrayIndex = diffEntry.index; diffEntry || (stateArrayIndex < arrayOfState.length); stateArrayIndex++) {
+            for (var stateArrayIndex = diffEntry.index; diffEntry || (stateArrayIndex < arrayOfState.length); stateArrayIndex += 1) {
                 // Does the current diffEntry correspond to this position in the state array?
                 if (getDiffEntryPostOperationIndex(diffEntry, editOffset) === stateArrayIndex) {
                     // Yes - insert or delete the corresponding state and output items
                     switch (diffEntry.status) {
                     case 'added':
                         // Add to output, and update indexes
-                        var stateItem = insertOutputItem(ko, diffEntry, movedStateItems, stateArrayIndex, outputArrayIndex, mappingOptions, arrayOfState, outputObservableArray, outputArray);
+                        var stateItem = insertOutputItem(diffEntry, movedStateItems, stateArrayIndex, outputArrayIndex, mappingOptions, arrayOfState, outputObservableArray, outputArray);
                         if (stateItem.isIncluded) {
-                            outputArrayIndex++;
+                            outputArrayIndex += 1;
                         }
-                        editOffset++;
+                        editOffset += 1;
                         break;
                     case 'deleted':
                         // Just erase from the output, and update indexes
                         deleteOutputItem(diffEntry, arrayOfState, stateArrayIndex, outputArrayIndex, outputArray);
-                        editOffset--;
-                        stateArrayIndex--; // To compensate for the "for" loop incrementing it
+                        editOffset -= 1;
+                        stateArrayIndex -= 1; // To compensate for the "for" loop incrementing it
                         break;
                     default:
                         throw new Error('Unknown diff status: ' + diffEntry.status);
                     }
 
                     // We're done with this diff entry. Move on to the next one.
-                    diffIndex++;
+                    diffIndex += 1;
                     diffEntry = diff[diffIndex];
                 } else if (stateArrayIndex < arrayOfState.length) {
                     // No - the current item was retained. Just update its index.
@@ -289,12 +288,12 @@ limitations under the License.
     }
 
     // Mapping
-    function observableArrayMap(ko, mappingOptions) {
-        var inputObservableArray = this,
+    function observableArrayMap(mappingOptions) {
+        var that = this,
             arrayOfState = [],
             outputArray = [],
             outputObservableArray = ko.observableArray(outputArray),
-            originalInputArrayContents = inputObservableArray.peek();
+            originalInputArrayContents = that.peek();
 
         // Shorthand syntax - just pass a function instead of an options object
         if (typeof mappingOptions === 'function') {
@@ -311,9 +310,9 @@ limitations under the License.
         }
 
         // Initial state: map each of the inputs
-        for (var i = 0; i < originalInputArrayContents.length; i++) {
+        for (var i = 0; i < originalInputArrayContents.length; i += 1) {
             var inputItem = originalInputArrayContents[i],
-                stateItem = new StateItem(ko, inputItem, i, outputArray.length, mappingOptions, arrayOfState, outputObservableArray),
+                stateItem = new StateItem(inputItem, i, outputArray.length, mappingOptions, arrayOfState, outputObservableArray),
                 mappedValue = stateItem.mappedValueComputed.peek();
             arrayOfState.push(stateItem);
 
@@ -323,7 +322,7 @@ limitations under the License.
         }
 
         // If the input array changes structurally (items added or removed), update the outputs
-        var inputArraySubscription = respondToArrayStructuralChanges(ko, inputObservableArray, arrayOfState, outputArray, outputObservableArray, mappingOptions);
+        var inputArraySubscription = respondToArrayStructuralChanges(that, arrayOfState, outputArray, outputObservableArray, mappingOptions);
 
         var outputComputed = outputObservableArray;
         if ('throttle' in mappingOptions) {
@@ -333,33 +332,33 @@ limitations under the License.
         // When disposed, it cleans up everything it created.
         var returnValue = ko.pureComputed(outputComputed).extend({ trackArrayChanges: true }),
             originalDispose = returnValue.dispose;
-        returnValue.dispose = function() {
+        returnValue.dispose = function () {
             inputArraySubscription.dispose();
-            ko.utils.arrayForEach(arrayOfState, function(stateItem) {
+            ko.utils.arrayForEach(arrayOfState, function (stateItem) {
                 stateItem.dispose();
             });
             originalDispose.call(this, arguments);
         };
 
         // Make transformations chainable
-        addTransformationFunctions(ko, returnValue);
+        addTransformationFunctions(returnValue);
 
         return returnValue;
     }
 
     // Filtering
-    function observableArrayFilter(ko, mappingOptions) {
+    function observableArrayFilter(mappingOptions) {
         // Shorthand syntax - just pass a function instead of an options object
         if (typeof mappingOptions === 'function') {
             mappingOptions = { mapping: mappingOptions };
         }
         var predicate = mappingOptions.mapping;
 
-        mappingOptions.mapping = function(item) {
+        mappingOptions.mapping = function (item) {
             return predicate(item) ? item : exclusionMarker;
         };
 
-        return observableArrayMap.call(this, ko, mappingOptions);
+        return observableArrayMap.call(this, mappingOptions);
     }
 
     function sortingKeysEquals(aSortKeys, bSortKeys) {
@@ -500,7 +499,6 @@ limitations under the License.
     }
 
     function SortedStateItem(transformation, inputItem) {
-        var ko = transformation.ko;
         this.transformation = transformation;
         this.inputItem = inputItem;
 
@@ -509,7 +507,7 @@ limitations under the License.
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
 
-    SortedStateItem.prototype.dispose = function() {
+    SortedStateItem.prototype.dispose = function () {
         var mappedItem = this.mappedValueComputed();
         this.mappedValueComputed.dispose();
         if (this.transformation.options.disposeItem) {
@@ -517,7 +515,7 @@ limitations under the License.
         }
     };
 
-    SortedStateItem.prototype.mappingEvaluator = function() {
+    SortedStateItem.prototype.mappingEvaluator = function () {
         return this.transformation.mapping(this.inputItem, SortByTransformation.Descending.create);
     };
 
@@ -544,7 +542,6 @@ limitations under the License.
                 this.previousMappedValue = newValue;
                 outputObservable.valueHasMutated();
             } else {
-                var ko = transformation.ko;
                 ko.utils.arrayForEach(stateItems, function (stateItem) {
                     stateItem.previousMappedValue = stateItem.mappingEvaluator();
                 });
@@ -563,9 +560,8 @@ limitations under the License.
         }
     };
 
-    function SortByTransformation(ko, inputObservableArray, options) {
+    function SortByTransformation(inputObservableArray, options) {
         var that = this;
-        this.ko = ko;
         this.options = options;
 
         this.mapping = options.mapping;
@@ -594,16 +590,16 @@ limitations under the License.
         // When disposed, it cleans up everything it created.
         this.output = outputComputed.extend({ trackArrayChanges: true });
         var originalDispose = this.output.dispose;
-        this.output.dispose = function() {
+        this.output.dispose = function () {
             inputArraySubscription.dispose();
-            ko.utils.arrayForEach(that.stateItems, function(stateItem) {
+            ko.utils.arrayForEach(that.stateItems, function (stateItem) {
                 stateItem.dispose();
             });
             originalDispose.call(this, arguments);
         };
 
         // Make transformations chainable
-        addTransformationFunctions(ko, this.output);
+        addTransformationFunctions(this.output);
     }
 
     SortByTransformation.Descending = function Descending(value) {
@@ -622,7 +618,6 @@ limitations under the License.
         this.outputObservable.valueWillMutate();
 
         var that = this;
-        var ko = this.ko;
         var addQueue = [];
         var deleteQueue = [];
         ko.utils.arrayForEach(diff, function (diffEntry) {
@@ -673,22 +668,21 @@ limitations under the License.
         this.outputObservable.valueHasMutated();
     };
 
-    function observableArraySortBy(ko, options) {
+    function observableArraySortBy(options) {
         // Shorthand syntax - just pass a function instead of an options object
         if (typeof options === 'function') {
             options = { mapping: options };
         }
 
-        var transformation = new SortByTransformation(ko, this, options);
+        var transformation = new SortByTransformation(this, options);
 
         return transformation.output;
     }
 
     // Indexing
 
-    function IndexByTransformation(ko, inputObservableArray, options) {
+    function IndexByTransformation(inputObservableArray, options) {
         var that = this;
-        this.ko = ko;
         this.options = options;
         this.outputObservable = ko.observable({});
         this.stateItems = {};
@@ -713,7 +707,7 @@ limitations under the License.
         // Return value is a readonly, when disposed, it cleans up everything it created.
         this.output = outputComputed;
         var originalDispose = this.output.dispose;
-        this.output.dispose = function() {
+        this.output.dispose = function () {
             inputArraySubscription.dispose();
             for (var prop in that.stateItems) {
                 if (that.stateItems.hasOwnProperty(prop)) {
@@ -725,7 +719,6 @@ limitations under the License.
     }
 
     IndexByTransformation.prototype.arraysEqual = function (a, b) {
-        var ko = this.ko;
         if (a === b) {
             return true;
         }
@@ -786,7 +779,6 @@ limitations under the License.
     };
 
     IndexByTransformation.prototype.findStateItem = function (inputItem) {
-        var ko = this.ko;
         var key = this.mapping(inputItem)[0];
         var entry = this.stateItems[key];
         if (!entry) {
@@ -807,7 +799,6 @@ limitations under the License.
 
     IndexByTransformation.prototype.addToIndex = function (inputItem) {
         var that = this;
-        var ko = this.ko;
         var keys = this.mapping(inputItem);
         var output = this.outputObservable.peek();
         ko.utils.arrayForEach(keys, function (key) {
@@ -819,7 +810,6 @@ limitations under the License.
 
     IndexByTransformation.prototype.removeItem = function (inputItem) {
         var that = this;
-        var ko = this.ko;
         var stateItem = this.findStateItem(inputItem);
         if (stateItem) {
             var keys = stateItem.mappedValueComputed();
@@ -836,7 +826,6 @@ limitations under the License.
         if (!diff.length) {
             return;
         }
-        var ko = this.ko;
 
         var addQueue = [];
         var deleteQueue = [];
@@ -867,7 +856,7 @@ limitations under the License.
     function IndexedStateItem(transformation, inputItem) {
         this.transformation = transformation;
         this.inputItem = inputItem;
-        this.mappedValueComputed = transformation.ko.computed(this.mappingEvaluator, this);
+        this.mappedValueComputed = ko.computed(this.mappingEvaluator, this);
         this.mappedValueComputed.subscribe(this.onMappingResultChanged, this);
         this.previousMappedValue = this.mappedValueComputed.peek();
     }
@@ -881,7 +870,7 @@ limitations under the License.
         }
     };
 
-    IndexedStateItem.prototype.mappingEvaluator = function() {
+    IndexedStateItem.prototype.mappingEvaluator = function () {
         return this.transformation.mapping(this.inputItem);
     };
 
@@ -900,8 +889,8 @@ limitations under the License.
         }
     };
 
-    function UniqueIndexByTransformation(ko, inputObservableArray, options) {
-        IndexByTransformation.call(this, ko, inputObservableArray, options);
+    function UniqueIndexByTransformation(inputObservableArray, options) {
+        IndexByTransformation.call(this, inputObservableArray, options);
     }
 
     ko.utils.extend(UniqueIndexByTransformation.prototype, IndexByTransformation.prototype);
@@ -938,7 +927,6 @@ limitations under the License.
 
     UniqueIndexByTransformation.prototype.addToIndex = function (inputItem) {
         var that = this;
-        var ko = this.ko;
         var keys = this.mapping(inputItem);
         var output = this.outputObservable.peek();
         ko.utils.arrayForEach(keys, function (key) {
@@ -950,7 +938,6 @@ limitations under the License.
 
     UniqueIndexByTransformation.prototype.removeItem = function (inputItem) {
         var that = this;
-        var ko = this.ko;
         var stateItem = this.findStateItem(inputItem);
         if (stateItem) {
             var keys = stateItem.mappedValueComputed();
@@ -968,27 +955,27 @@ limitations under the License.
 
     ko.utils.extend(UniqueIndexedStateItem.prototype, IndexedStateItem.prototype);
 
-    function observableArrayIndexBy(ko, options) {
+    function observableArrayIndexBy(options) {
         // Shorthand syntax - just pass a function instead of an options object
         if (typeof options === 'function') {
             options = { mapping: options, unique: false };
         }
 
         var transformation = options.unique ?
-            new UniqueIndexByTransformation(ko, this, options):
-            new IndexByTransformation(ko, this, options);
+            new UniqueIndexByTransformation(this, options) :
+            new IndexByTransformation(this, options);
 
         return transformation.output;
     }
 
-    function observableArrayUniqueIndexBy(ko, options) {
+    function observableArrayUniqueIndexBy(options) {
         // Shorthand syntax - just pass a function instead of an options object
         if (typeof options === 'function') {
             options = { mapping: options };
         }
         options.unique = true;
 
-        var transformation = new UniqueIndexByTransformation(ko, this, options);
+        var transformation = new UniqueIndexByTransformation(this, options);
 
         return transformation.output;
     }
@@ -1000,7 +987,7 @@ limitations under the License.
     // The functions are predefined to retain 'this' and prefix the arguments list with the
     // relevant 'ko' instance.
 
-    function addTransformationFunctions(ko, target) {
+    function addTransformationFunctions(target) {
         ko.utils.extend(target, ko.transformations.fn);
         return target; // Enable chaining
     }
@@ -1012,11 +999,11 @@ limitations under the License.
     // it is in (Node.js or a browser `<script>` tag), and then attaches itself to whichever
     // instance of Knockout.js it can find.
 
-    function attachToKo(ko) {
+    function attachToKo() {
         // Wraps callback so that, when invoked, its arguments list is prefixed by 'ko' and 'this'
-        function makeCaller(ko, callback) {
-            return function() {
-                return callback.apply(this, [ko].concat(Array.prototype.slice.call(arguments, 0)));
+        function makeCaller(callback) {
+            return function () {
+                return callback.apply(this, Array.prototype.slice.call(arguments, 0));
             };
         }
 
@@ -1025,14 +1012,14 @@ limitations under the License.
             _exclusionMarker: exclusionMarker
         };
         ko.utils.extend(ko.transformations.fn, {
-            map: makeCaller(ko, observableArrayMap),
-            sortBy: makeCaller(ko, observableArraySortBy),
-            indexBy: makeCaller(ko, observableArrayIndexBy),
-            uniqueIndexBy: makeCaller(ko, observableArrayUniqueIndexBy),
-            filter: makeCaller(ko, observableArrayFilter)
+            map: makeCaller(observableArrayMap),
+            sortBy: makeCaller(observableArraySortBy),
+            indexBy: makeCaller(observableArrayIndexBy),
+            uniqueIndexBy: makeCaller(observableArrayUniqueIndexBy),
+            filter: makeCaller(observableArrayFilter)
         });
-        addTransformationFunctions(ko, ko.observableArray.fn); // Make all observable arrays projectable
+        addTransformationFunctions(ko.observableArray.fn); // Make all observable arrays projectable
     }
 
-    attachToKo(ko);
+    attachToKo();
 }));
