@@ -430,7 +430,12 @@ describe("Map", function () {
                 // Notice there is no extra layer of observability here
                 // (no ko.computed), so when 'name' changes, this entire
                 // mapped entry has to get replaced.
-                return { nameUpper: item.name().toUpperCase(), mappedItemIndex: mappedItemNextIndex += 1 };
+                var newIndex = mappedItemNextIndex;
+                mappedItemNextIndex += 1;
+                return {
+                    nameUpper: item.name().toUpperCase(),
+                    mappedItemIndex: newIndex
+                };
             },
             disposeItem: function (mappedItem) {
                 disposedItemsIndices.push(mappedItem.mappedItemIndex);
