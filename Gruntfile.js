@@ -13,32 +13,18 @@ module.exports = function(grunt) {
     grunt.initConfig({
         pkg: pkg,
         jshint: {
-            all: ['lib/knockout-transformations.js'],
+            all: [
+                'lib/**/*.js',
+                'test/**/*.js'
+            ],
             options: {
-                globals: {
-                    module: true,
-                    require: true,
-                    define: true
-                },
-
-                // Restrictions
-                curly: true,
-                eqeqeq: true,
-                indent: 4,
-                latedef: true,
-                newcap: true,
-                noempty: true,
-                quotmark: 'single',
-                undef: true,
-                unused: true,
-                strict: false,
-                trailing: true,
-
-                // Allowances
-                validthis: true,
-
-                // Environments
-                browser: true,
+                jshintrc: true
+            }
+        },
+        jscs: {
+            src: ["lib/*.js", "test/*.js"],
+            options: {
+                config: ".jscsrc",
             }
         },
         concat: {
@@ -88,6 +74,7 @@ module.exports = function(grunt) {
         }
     });
 
+    grunt.loadNpmTasks('grunt-jscs');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-concat');

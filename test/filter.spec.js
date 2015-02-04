@@ -15,7 +15,7 @@ describe("Filter", function () {
         clock.restore();
     });
 
-    var makeSampleData = function() {
+    var makeSampleData = function () {
         var sampleData = {
             everest: { height: ko.observable(8848) },
             aconcagua: { height: ko.observable(6961) },
@@ -23,27 +23,27 @@ describe("Filter", function () {
             kilimanjaro: { height: ko.observable(5895) },
             elbrus: { height: ko.observable(5642) },
             vinson: { height: ko.observable(4892) },
-            puncakjaya: { height: ko.observable(4884) },
+            puncakjaya: { height: ko.observable(4884) }
         };
         sampleData.all = [sampleData.everest, sampleData.aconcagua, sampleData.mckinley, sampleData.kilimanjaro, sampleData.elbrus, sampleData.vinson, sampleData.puncakjaya];
         return sampleData;
     };
 
-    it("returns a readonly computed observable array", function() {
+    it("returns a readonly computed observable array", function () {
         var sampleData = makeSampleData(),
         sourceArray = ko.observableArray(sampleData.all),
-        filteredArray = sourceArray.filter(function(item) { return true; });
+        filteredArray = sourceArray.filter(function (item) { return true; });
 
         expect(ko.isObservable(filteredArray), 'to be', true);
         expect(ko.isComputed(filteredArray), 'to be', true);
-        expect(function() { filteredArray([1, 2, 3]); }, 'to throw',
+        expect(function () { filteredArray([1, 2, 3]); }, 'to throw',
                "Cannot write a value to a ko.computed unless you specify a 'write' option. If you wish to read the current value, don't pass any parameters.");
     });
 
-    it("filters the input array using the predicate", function() {
+    it("filters the input array using the predicate", function () {
         var sampleData = makeSampleData(),
         sourceArray = ko.observableArray(sampleData.all),
-        filteredArray = sourceArray.filter(function(item) { return item.height() > 6000; });
+        filteredArray = sourceArray.filter(function (item) { return item.height() > 6000; });
 
         // Check we have the original instances
         expect(filteredArray().length, 'to be', 3);
@@ -52,10 +52,10 @@ describe("Filter", function () {
         expect(filteredArray()[2], 'to be', sampleData.mckinley);
     });
 
-    it("responds to changes in the input data, but retains the same output array instance", function() {
+    it("responds to changes in the input data, but retains the same output array instance", function () {
         var sampleData = makeSampleData(),
         sourceArray = ko.observableArray(sampleData.all),
-        filteredArray = sourceArray.filter(function(item) { return item.height() > 6000; }),
+        filteredArray = sourceArray.filter(function (item) { return item.height() > 6000; }),
         originalFilteredArrayInstance = filteredArray();
         expect(filteredArray(), 'to equal', [sampleData.everest, sampleData.aconcagua, sampleData.mckinley]);
 
@@ -69,12 +69,12 @@ describe("Filter", function () {
         expect(filteredArray(), 'to equal', [sampleData.aconcagua, sampleData.mckinley, sampleData.vinson]);
     });
 
-    it("is possible to chain filters", function() {
+    it("is possible to chain filters", function () {
         var sampleData = makeSampleData(),
         sourceArray = ko.observableArray(sampleData.all),
-        tallOnes = sourceArray.filter(function(item) { return item.height() > 5000; }),
-        heightsOfTallOnes = tallOnes.map(function(item) { return item.height(); }),
-        evenHeightsOfTallOnes = heightsOfTallOnes.filter(function(height) { return height % 2 === 0; });
+        tallOnes = sourceArray.filter(function (item) { return item.height() > 5000; }),
+        heightsOfTallOnes = tallOnes.map(function (item) { return item.height(); }),
+        evenHeightsOfTallOnes = heightsOfTallOnes.filter(function (height) { return height % 2 === 0; });
 
         expect(tallOnes(), 'to equal', [sampleData.everest, sampleData.aconcagua, sampleData.mckinley, sampleData.kilimanjaro, sampleData.elbrus]);
         expect(heightsOfTallOnes(), 'to equal', [8848, 6961, 6194, 5895, 5642]);
@@ -93,12 +93,12 @@ describe("Filter", function () {
         expect(evenHeightsOfTallOnes(), 'to equal', [6194, 5642, 10000]);
     });
 
-    it("only runs the filter predicate for items affected by a change", function() {
+    it("only runs the filter predicate for items affected by a change", function () {
         var sampleData = makeSampleData(),
         sourceArray = ko.observableArray(sampleData.all),
         filterCallsCount = 0,
-        veryTallOnes = sourceArray.filter(function(item) {
-            filterCallsCount++;
+        veryTallOnes = sourceArray.filter(function (item) {
+            filterCallsCount += 1;
             return item.height() > 6000;
         });
 
@@ -117,14 +117,16 @@ describe("Filter", function () {
         expect(filterCallsCount, 'to be', 8); // No additional filter calls were required
     });
 
-    it("only issues notifications when some inclusion status has actually changed", function() {
+    it("only issues notifications when some inclusion status has actually changed", function () {
         var sampleData = makeSampleData(),
         sourceArray = ko.observableArray(sampleData.all),
         outputNotifications = 0,
-        veryTallOnes = sourceArray.filter(function(item) {
+        veryTallOnes = sourceArray.filter(function (item) {
             return item.height() > 6000;
         });
-        veryTallOnes.subscribe(function() { outputNotifications++ });
+        veryTallOnes.subscribe(function () {
+            outputNotifications += 1;
+        });
         expect(veryTallOnes(), 'to equal', [sampleData.everest, sampleData.aconcagua, sampleData.mckinley]);
 
         // Mutate one to make it become excluded

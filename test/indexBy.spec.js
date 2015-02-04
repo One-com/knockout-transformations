@@ -52,7 +52,7 @@ describe("IndexBy", function () {
         beforeEach(function () {
             sampleData = ['Beta', 'Beta', 'Gamma', 'Alpha'];
             sourceArray = ko.observableArray(sampleData);
-            indexedData = sourceArray.indexBy(function(item) { return item; })();
+            indexedData = sourceArray.indexBy(function (item) { return item; })();
         });
 
         it("indexes the array according to the given function, returning a computed map", function () {
@@ -119,7 +119,7 @@ describe("IndexBy", function () {
             expect(indexedData, 'to equal', {
                 'Alpha': ['Alpha'],
                 'Beta': ['Beta'],
-                'Gamma': ['Gamma'],
+                'Gamma': ['Gamma']
             });
         });
 
@@ -128,7 +128,7 @@ describe("IndexBy", function () {
             expect(indexedData, 'to equal', {
                 'Alpha': ['Alpha'],
                 'Beta': ['Beta', 'Beta'],
-                'Gamma': ['Gamma'],
+                'Gamma': ['Gamma']
             });
         });
 
@@ -137,7 +137,7 @@ describe("IndexBy", function () {
             expect(indexedData, 'to equal', {
                 'Alpha': ['Alpha'],
                 'Beta': ['Beta', 'Beta'],
-                'Gamma': ['Gamma'],
+                'Gamma': ['Gamma']
             });
         });
     });
@@ -181,7 +181,7 @@ describe("IndexBy", function () {
             });
 
             sourceArray = ko.observableArray(sampleData);
-            indexedData = sourceArray.indexBy(function(person) {
+            indexedData = sourceArray.indexBy(function (person) {
                 return person.name();
             })();
         });
@@ -220,7 +220,6 @@ describe("IndexBy", function () {
 
             sourceArray.splice(3, 2, queenVictoria, johnMKeynes);
 
-            expectedIndex[queenVictoria.name()];
             expectedIndex[queenVictoria.name()] = [queenVictoria];
             expectedIndex[johnMKeynes.name()] = [johnMKeynes];
             expect(indexedData, 'to equal', expectedIndex);
@@ -260,7 +259,7 @@ describe("IndexBy", function () {
 
         describe('on multiple keys', function () {
             beforeEach(function () {
-                indexedData = sourceArray.indexBy(function(person) {
+                indexedData = sourceArray.indexBy(function (person) {
                     return [person.name(), person.yearOfBirth()];
                 })();
 
@@ -383,7 +382,7 @@ describe("UniqueIndexBy", function () {
             sourceArray.shift();
             expect(indexedData, 'to equal', {
                 'Alpha': 'Alpha',
-                'Gamma': 'Gamma',
+                'Gamma': 'Gamma'
             });
         });
 
@@ -392,7 +391,7 @@ describe("UniqueIndexBy", function () {
             expect(indexedData, 'to equal', {
                 'Alpha': 'Alpha',
                 'Beta': 'Beta',
-                'Gamma': 'Gamma',
+                'Gamma': 'Gamma'
             });
         });
 
@@ -401,7 +400,7 @@ describe("UniqueIndexBy", function () {
             expect(indexedData, 'to equal', {
                 'Alpha': 'Alpha',
                 'Beta': 'Beta',
-                'Gamma': 'Gamma',
+                'Gamma': 'Gamma'
             });
         });
 
@@ -471,7 +470,7 @@ describe("UniqueIndexBy", function () {
             });
 
             sourceArray = ko.observableArray(sampleData);
-            indexedData = sourceArray.uniqueIndexBy(function(person) {
+            indexedData = sourceArray.uniqueIndexBy(function (person) {
                 return person.name();
             })();
         });
@@ -510,7 +509,6 @@ describe("UniqueIndexBy", function () {
 
             sourceArray.splice(3, 2, queenVictoria, johnMKeynes);
 
-            expectedIndex[queenVictoria.name()];
             expectedIndex[queenVictoria.name()] = queenVictoria;
             expectedIndex[johnMKeynes.name()] = johnMKeynes;
             expect(indexedData, 'to equal', expectedIndex);
@@ -556,7 +554,7 @@ describe("UniqueIndexBy", function () {
 
         describe('on multiple keys', function () {
             beforeEach(function () {
-                indexedData = sourceArray.uniqueIndexBy(function(person) {
+                indexedData = sourceArray.uniqueIndexBy(function (person) {
                     return [person.name(), person.yearOfBirth()];
                 })();
 

@@ -62,7 +62,7 @@ describe("SortBy", function () {
         beforeEach(function () {
             sampleData = ['Beta', 'Beta', 'Gamma', 'Alpha'];
             sourceArray = ko.observableArray(sampleData);
-            sortedArray = sourceArray.sortBy(function(item) { return item; });
+            sortedArray = sourceArray.sortBy(function (item) { return item; });
         });
 
         it("sort the array according to the given function, returning a new observable array", function () {
@@ -109,24 +109,24 @@ describe("SortBy", function () {
             expect(sortedArray(), 'to equal', sorted(sampleData));
         });
 
-        it("returns a readonly computed observable array", function() {
+        it("returns a readonly computed observable array", function () {
             expect(ko.isObservable(sortedArray), 'to be', true);
             expect(ko.isComputed(sortedArray), 'to be', true);
-            expect(function() { sortedArray([1, 2, 3]); }, 'to throw',
+            expect(function () { sortedArray([1, 2, 3]); }, 'to throw',
                 "Cannot write a value to a ko.computed unless you specify a 'write' option." +
                     " If you wish to read the current value, don't pass any parameters.");
         });
 
         it("supports an alternative 'options' object syntax", function () {
             var sortedArray = sourceArray.sortBy({
-                mapping: function(item) { return item; }
+                mapping: function (item) { return item; }
             });
             expect(sortedArray(), 'to equal', sorted(sampleData));
         });
 
         it("issues notifications when the underlying data changes, updating the mapped result", function () {
             var log = [];
-            sortedArray.subscribe(function(values) { log.push(values); });
+            sortedArray.subscribe(function (values) { log.push(values); });
 
             // Initial state is set without any notification
             expect(sortedArray(), 'to equal', sorted(sampleData));
@@ -151,7 +151,7 @@ describe("SortBy", function () {
 
         it('ignores when items are moved in the underlying data', function () {
             var log = [];
-            sortedArray.subscribe(function(values) { log.push(values); });
+            sortedArray.subscribe(function (values) { log.push(values); });
 
             // Moving items in the underlying array
             Array.prototype.push.apply(sampleData, sampleData.splice(1, 3));
@@ -160,7 +160,7 @@ describe("SortBy", function () {
             expect(sortedArray(), 'to equal', sorted(sampleData));
         });
 
-        it("is possible to chain mappings", function() {
+        it("is possible to chain mappings", function () {
             function getLength(item) {
                 return item.length;
             }
@@ -216,7 +216,7 @@ describe("SortBy", function () {
             ];
 
             sourceArray = ko.observableArray(sampleData);
-            sortedArray = sourceArray.sortBy(function(person, descending) {
+            sortedArray = sourceArray.sortBy(function (person, descending) {
                 return [descending(person.yearOfBirth()), person.name()];
             });
         });
@@ -273,7 +273,6 @@ describe("SortBy", function () {
         });
 
         it('maintains the sort order when the sort direction flips', function () {
-            var i = sampleData.length;
             sampleData.forEach(function (item) {
                 item.yearOfBirth(0 - item.yearOfBirth());
             });
@@ -303,9 +302,9 @@ describe("SortBy", function () {
                     }
 
                     return 0;
-                }
+                };
 
-                variableSortedArray = sourceArray.sortBy(function(person, descending) {
+                variableSortedArray = sourceArray.sortBy(function (person, descending) {
                     if (sortDirection() === 1) {
                         return [person.yearOfBirth(), person.name()];
                     } else {

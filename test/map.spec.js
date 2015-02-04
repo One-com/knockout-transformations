@@ -17,35 +17,35 @@ describe("Map", function () {
 
     var sampleData = ['Alpha', 'Beta', 'Gamma'];
 
-    it("returns a readonly computed observable array", function() {
+    it("returns a readonly computed observable array", function () {
         var sourceArray = ko.observableArray(sampleData.slice(0)),
-        mappedArray = sourceArray.map(function(item) { return item.length; });
+        mappedArray = sourceArray.map(function (item) { return item.length; });
 
         expect(ko.isObservable(mappedArray), 'to be', true);
         expect(ko.isComputed(mappedArray), 'to be', true);
-        expect(function() { mappedArray([1, 2, 3]); }, 'to throw',
+        expect(function () { mappedArray([1, 2, 3]); }, 'to throw',
                "Cannot write a value to a ko.computed unless you specify a 'write' option. If you wish to read the current value, don't pass any parameters.");
     });
 
     it("maps each entry in the array, returning a new observable array", function () {
         var sourceArray = ko.observableArray(sampleData.slice(0)),
-        mappedArray = sourceArray.map(function(item) { return item.length; });
+        mappedArray = sourceArray.map(function (item) { return item.length; });
         expect(mappedArray(), 'to equal', [5, 4, 5]);
     });
 
     it("supports an alternative 'options' object syntax", function () {
         var sourceArray = ko.observableArray(sampleData.slice(0)),
         mappedArray = sourceArray.map({
-            mapping: function(item) { return item.length; }
+            mapping: function (item) { return item.length; }
         });
         expect(mappedArray(), 'to equal', [5, 4, 5]);
     });
 
     it("issues notifications when the underlying data changes, updating the mapped result", function () {
         var sourceArray = ko.observableArray(sampleData.slice(0)),
-        mappedArray = sourceArray.map(function(item) { return item.length; }),
+        mappedArray = sourceArray.map(function (item) { return item.length; }),
         log = [];
-        mappedArray.subscribe(function(values) { log.push(values); });
+        mappedArray.subscribe(function (values) { log.push(values); });
 
         // Initial state is set without any notification
         expect(mappedArray(), 'to equal', [5, 4, 5]);
@@ -68,7 +68,7 @@ describe("Map", function () {
         expect(log[2], 'to equal', [5, 8, 7]);
     });
 
-    it("does not issue notifications for in-place edits if the mapping function returns the same object instance", function() {
+    it("does not issue notifications for in-place edits if the mapping function returns the same object instance", function () {
         // With mapping, you should typically return new object instances each time from your mapping function.
         // If you preserve object instances we assume it's not a change you want to issue notification about.
         // When the mapping result is a primitive, this isn't controversial - there really isn't a change to notify.
@@ -79,9 +79,9 @@ describe("Map", function () {
 
         var sourceArray = ko.observableArray([{ value: ko.observable('Alpha') }, { value: ko.observable('Beta') }]),
         mappedItem = { theItem: true },
-        mappedArray = sourceArray.map(function(item) { return mappedItem; }),
+        mappedArray = sourceArray.map(function (item) { return mappedItem; }),
         log = [];
-        mappedArray.subscribe(function(values) { log.push(ko.toJSON(values)); });
+        mappedArray.subscribe(function (values) { log.push(ko.toJSON(values)); });
 
         // Initial state
         expect(mappedArray(), 'to equal', [mappedItem, mappedItem]);
@@ -94,14 +94,14 @@ describe("Map", function () {
         expect(ko.toJSON(mappedArray), 'to be', '[{"theItem":true},{"theItem":true}]');
     });
 
-    it("is possible to chain mappings", function() {
+    it("is possible to chain mappings", function () {
         var sourceArray = ko.observableArray(sampleData.slice(0)),
-        mappedArray1 = sourceArray.map(function(item) { return item + item.toUpperCase(); }),
-        mappedArray2 = mappedArray1.map(function(item) { return item.length; }),
+        mappedArray1 = sourceArray.map(function (item) { return item + item.toUpperCase(); }),
+        mappedArray2 = mappedArray1.map(function (item) { return item.length; }),
         log1 = [],
         log2 = [];
-        mappedArray1.subscribe(function(values) { log1.push(values); });
-        mappedArray2.subscribe(function(values) { log2.push(values); });
+        mappedArray1.subscribe(function (values) { log1.push(values); });
+        mappedArray2.subscribe(function (values) { log2.push(values); });
 
         // Initial state is set without any notification
         expect(mappedArray1(), 'to equal', ['AlphaALPHA', 'BetaBETA', 'GammaGAMMA']);
@@ -117,13 +117,16 @@ describe("Map", function () {
         expect(log2[0], 'to equal', [10, 8, 10, 14]);
     });
 
-    it("only calls the mapping function for each newly added item", function() {
+    it("only calls the mapping function for each newly added item", function () {
         var sourceArray = ko.observableArray(sampleData.slice(0)),
         mapCallsCount = 0,
-        mappedArray = sourceArray.map(function(item) { mapCallsCount++; return item.length; }),
+        mappedArray = sourceArray.map(function (item) {
+            mapCallsCount += 1;
+            return item.length;
+        }),
         originalMappedArrayInstance = mappedArray(),
         log = [];
-        mappedArray.subscribe(function(values) { log.push(values); });
+        mappedArray.subscribe(function (values) { log.push(values); });
 
         // Initially the mapping is run for each item
         expect(mappedArray(), 'to equal', [5, 4, 5]);
@@ -151,7 +154,7 @@ describe("Map", function () {
         expect(mapCallsCount, 'to be', 6);
     });
 
-    it("responds to observable changes on individual items", function() {
+    it("responds to observable changes on individual items", function () {
         var prefix = ko.observable('');
 
         // Set up an array mapping in which individual items are observable
@@ -160,12 +163,12 @@ describe("Map", function () {
             { name: 'Mollie', age: ko.observable(246) }
         ]),
         mapCallsCount = 0,
-        mappedArray = sourceArray.map(function(item) {
-            mapCallsCount++;
+        mappedArray = sourceArray.map(function (item) {
+            mapCallsCount += 1;
             return prefix() + item.name + ' is age ' + item.age();
         }),
         log = [];
-        mappedArray.subscribe(function(values) { log.push(values); });
+        mappedArray.subscribe(function (values) { log.push(values); });
         expect(log.length, 'to be', 0);
         expect(mapCallsCount, 'to be', 2);
         expect(mappedArray(), 'to equal', ['Bert is age 123', 'Mollie is age 246']);
@@ -196,11 +199,11 @@ describe("Map", function () {
         expect(mappedArray(), 'to equal', ['person: Bert is age 555', 'person: Mollie is age 246', 'person: Megatron is age 7']);
     });
 
-    it("supplies an observable index value that can be read in mappings", function() {
+    it("supplies an observable index value that can be read in mappings", function () {
         var sourceArray = ko.observableArray(['Alpha', 'Beta']),
         mapCallsCount = 0,
-        mappedArray = sourceArray.map(function(item, index) {
-            mapCallsCount++;
+        mappedArray = sourceArray.map(function (item, index) {
+            mapCallsCount += 1;
             return "Item " + index() + " is " + item;
         });
         expect(mappedArray(), 'to equal', ['Item 0 is Alpha', 'Item 1 is Beta']);
@@ -227,7 +230,7 @@ describe("Map", function () {
         expect(mapCallsCount, 'to be', 9); // Remapped Alpha and Gamma because their indexes changed
     });
 
-    it("excludes any mapped values that match the private exclusion marker", function() {
+    it("excludes any mapped values that match the private exclusion marker", function () {
         // The private exclusion marker is only for use by the 'filter' function.
         // It's only required to work in cases where the mapping does *not* reference index at all
         // (and therefore items can't be included/excluded based on index, which wouldn't be meaningful)
@@ -239,9 +242,9 @@ describe("Map", function () {
         epsilon = { name: 'Epsilon', age: ko.observable(104) },
         sourceArray = ko.observableArray([alpha, beta, gamma]),
         mapCallsCount = 0,
-        mappedArray = sourceArray.map(function(item, index) {
+        mappedArray = sourceArray.map(function (item, index) {
             // Include only items with even age
-            mapCallsCount++;
+            mapCallsCount += 1;
             return item.age() % 2 === 0 ? (index() + ': ' + item.name + ' is age ' + item.age()) : ko.transformations._exclusionMarker;
         });
         expect(mappedArray(), 'to equal', ['0: Alpha is age 100', '1: Gamma is age 102']);
@@ -293,12 +296,12 @@ describe("Map", function () {
         expect(mappedArray(), 'to equal', ['0: Gamma is age 200', '1: Alpha is age 100', '2: Delta is age 500', '3: Epsilon is age 104']);
     });
 
-    it("disposes subscriptions when items are removed, and when the whole thing is disposed", function() {
+    it("disposes subscriptions when items are removed, and when the whole thing is disposed", function () {
         // Set up an array mapping in which individual items are observable
         var bert = { name: 'Bert', age: ko.observable(123) },
         mollie = { name: 'Mollie', age: ko.observable(246) },
         sourceArray = ko.observableArray([bert, mollie]),
-        mappedArray = sourceArray.map(function(item) {
+        mappedArray = sourceArray.map(function (item) {
             return item.name + ' is age ' + item.age();
         });
         expect(mappedArray(), 'to equal', ['Bert is age 123', 'Mollie is age 246']);
@@ -326,7 +329,7 @@ describe("Map", function () {
         expect(sourceArray.getSubscriptionsCount(), 'to be', 1);
     });
 
-    it("is possible to nest mappings", function() {
+    it("is possible to nest mappings", function () {
         var sourceArray = ko.observableArray([
             { id: 1, items: ko.observableArray(['Alpha', 'Beta', 'Gamma']) },
             { id: 2, items: ko.observableArray(['Delta']) },
@@ -334,15 +337,15 @@ describe("Map", function () {
         ]),
         outerMappingsCallCount = 0,
         innerMappingsCallCount = 0,
-        mappedArray = sourceArray.map(function(data) {
-            outerMappingsCallCount++;
+        mappedArray = sourceArray.map(function (data) {
+            outerMappingsCallCount += 1;
             return {
                 id2: data.id,
-                things: data.items.map(function(item) {
-                    innerMappingsCallCount++;
+                things: data.items.map(function (item) {
+                    innerMappingsCallCount += 1;
                     return { name: item };
                 })
-            }
+            };
         });
 
         expect(ko.toJS(mappedArray()), 'to equal', [
@@ -374,21 +377,21 @@ describe("Map", function () {
         expect(innerMappingsCallCount, 'to be', 7);
     });
 
-    it("is possible to provide a 'disposeItem' option to clear up the mapped object", function() {
+    it("is possible to provide a 'disposeItem' option to clear up the mapped object", function () {
         var modelItem = {
             name: ko.observable('Annie')
         },
         underlyingArray = ko.observableArray(),
         disposedItems = [],
         mappedArray = underlyingArray.map({
-            mapping: function(item) {
+            mapping: function (item) {
                 return {
-                    nameUpper: ko.computed(function() {
+                    nameUpper: ko.computed(function () {
                         return item.name().toUpperCase();
                     })
                 };
             },
-            disposeItem: function(mappedItem) {
+            disposeItem: function (mappedItem) {
                 disposedItems.push(mappedItem.nameUpper());
                 mappedItem.nameUpper.dispose();
             }
@@ -416,20 +419,20 @@ describe("Map", function () {
         expect(disposedItems, 'to equal', ['ANNIE', 'CLARABEL']);
     });
 
-    it("calls 'disposeItem' when items are being replaced in-place", function() {
+    it("calls 'disposeItem' when items are being replaced in-place", function () {
         var modelItem1 = { name: ko.observable('Annie') },
         modelItem2 = { name: ko.observable('Clarabel') },
         underlyingArray = ko.observableArray(),
         disposedItemsIndices = [],
         mappedItemNextIndex = 0,
         mappedArray = underlyingArray.map({
-            mapping: function(item) {
+            mapping: function (item) {
                 // Notice there is no extra layer of observability here
                 // (no ko.computed), so when 'name' changes, this entire
                 // mapped entry has to get replaced.
-                return { nameUpper: item.name().toUpperCase(), mappedItemIndex: mappedItemNextIndex++ };
+                return { nameUpper: item.name().toUpperCase(), mappedItemIndex: mappedItemNextIndex += 1 };
             },
-            disposeItem: function(mappedItem) {
+            disposeItem: function (mappedItem) {
                 disposedItemsIndices.push(mappedItem.mappedItemIndex);
             }
         });
@@ -466,13 +469,13 @@ describe("Map", function () {
         expect(disposedItemsIndices, 'to equal', [1, 2]);
     });
 
-    it("is possible to provide a 'mappingWithDisposeCallback' option to combine both 'mapping' and 'disposeItem' in one", function() {
+    it("is possible to provide a 'mappingWithDisposeCallback' option to combine both 'mapping' and 'disposeItem' in one", function () {
         // If you 'mapping' callback wants to create some per-item resource that needs disposal,
         // but that item is not the mapping result itself, then you would struggle to implement
         // the disposal because 'disposeItem' only gives you the mapping result, and not any
         // other context that helps you find the other per-item resource you created.
         // To solve this, 'mappingWithDisposeCallback' is an alternative to 'mapping'. Your return
-        // value should be an object of the form { mappedValue: ..., dispose: function() { ... } },
+        // value should be an object of the form { mappedValue: ..., dispose: function () { ... } },
         // and then the 'dispose' callback will be invoked when the mappedValue should be disposed.
 
         var underlyingArray = ko.observableArray([
@@ -483,13 +486,13 @@ describe("Map", function () {
         alphaObject = underlyingArray()[0],
         perItemResources = {},
         mappedArray = underlyingArray.map({
-            mappingWithDisposeCallback: function(value, index) {
+            mappingWithDisposeCallback: function (value, index) {
                 var name = value.name();
                 perItemResources[name] = { disposed: false };
 
                 return {
                     mappedValue: name.toUpperCase(),
-                    dispose: function() { perItemResources[name].disposed = true; }
+                    dispose: function () { perItemResources[name].disposed = true; }
                 };
             }
         });
@@ -530,20 +533,20 @@ describe("Map", function () {
         });
     });
 
-    it("will attempt to disposed mapped items on every evaluation, even if the evaluator returns the same object instances each time", function() {
+    it("will attempt to disposed mapped items on every evaluation, even if the evaluator returns the same object instances each time", function () {
         // It would be unusual to have a mapping evaluator that returns the same object instances each time
         // it is called, but if you do that, we will still tell you to dispose the item before every evaluation
         var underlyingArray = ko.observableArray([1, 2, 3]),
         constantMappedValue = { theMappedValue: true },
         disposeCount = 0,
         mappedArray = underlyingArray.map({
-            mappingWithDisposeCallback: function(item) {
+            mappingWithDisposeCallback: function (item) {
                 return {
                     mappedValue: constantMappedValue,
-                    dispose: function() {
-                        disposeCount++;
+                    dispose: function () {
+                        disposeCount += 1;
                     }
-                }
+                };
             }
         });
 
@@ -601,28 +604,28 @@ describe("Map", function () {
         expect(mappedArray(), 'to equal', [5, 10, 15]);
     });
 
-    it("is mandatory to specify 'mapping' or 'mappingWithDisposeCallback'", function() {
+    it("is mandatory to specify 'mapping' or 'mappingWithDisposeCallback'", function () {
         var underlyingArray = ko.observableArray([1, 2, 3]);
 
-        expect(function() {
+        expect(function () {
             underlyingArray.map({ /* empty options */ });
         }, 'to throw', "Specify either 'mapping' or 'mappingWithDisposeCallback'.");
     });
 
-    it("is not allowed to specify 'mappingWithDisposeCallback' in conjunction with 'mapping' or 'disposeItem'", function() {
+    it("is not allowed to specify 'mappingWithDisposeCallback' in conjunction with 'mapping' or 'disposeItem'", function () {
         var underlyingArray = ko.observableArray([1, 2, 3]);
 
-        expect(function() {
+        expect(function () {
             underlyingArray.map({
-                mapping: function() {  },
-                mappingWithDisposeCallback: function() {  }
+                mapping: function () {  },
+                mappingWithDisposeCallback: function () {  }
             });
         }, 'to throw', "'mappingWithDisposeCallback' cannot be used in conjunction with 'mapping' or 'disposeItem'.");
 
-        expect(function() {
+        expect(function () {
             underlyingArray.map({
-                disposeItem: function() {  },
-                mappingWithDisposeCallback: function() {  }
+                disposeItem: function () {  },
+                mappingWithDisposeCallback: function () {  }
             });
         }, 'to throw', "'mappingWithDisposeCallback' cannot be used in conjunction with 'mapping' or 'disposeItem'.");
     });
