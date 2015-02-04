@@ -31,7 +31,7 @@ module.exports = function(grunt) {
                 quotmark: 'single',
                 undef: true,
                 unused: true,
-                strict: true,
+                strict: false,
                 trailing: true,
 
                 // Allowances
