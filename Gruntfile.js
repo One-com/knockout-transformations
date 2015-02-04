@@ -13,7 +13,7 @@ module.exports = function(grunt) {
     grunt.initConfig({
         pkg: pkg,
         jshint: {
-            all: ['lib/knockout-transformatons.js'],
+            all: ['lib/knockout-transformations.js'],
             options: {
                 globals: {
                     module: true,
@@ -48,7 +48,7 @@ module.exports = function(grunt) {
                 }
             },
             dist: {
-                src: ['lib/knockout-transformatons.js'],
+                src: ['lib/knockout-transformations.js'],
                 dest: 'dist/<%= pkg.name %>.js'
             }
         },
