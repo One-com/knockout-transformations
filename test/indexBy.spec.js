@@ -1,7 +1,9 @@
-var ko = require('../lib/indexBy.js');
+var ko = require('knockout');
 var expect = require('unexpected').clone()
     .installPlugin(require('unexpected-sinon'));
 var sinon = require('sinon');
+
+require('../lib/indexBy.js');
 
 function Person(name, yearOfBirth) {
     this.name = ko.observable(name);

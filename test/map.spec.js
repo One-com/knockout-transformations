@@ -1,8 +1,9 @@
-var ko = require('../lib/map.js');
+var ko = require('knockout');
 var expect = require('unexpected').clone()
     .installPlugin(require('unexpected-sinon'));
 var sinon = require('sinon');
 
+require('../lib/map.js');
 
 describe("Map", function () {
     var clock;

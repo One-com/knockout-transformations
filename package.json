@@ -2,18 +2,23 @@
   "name": "knockout-transformations",
   "version": "1.6.0",
   "description": "Live transform methods for Knockout observable arrays",
-  "main": "dist/knockout-transformations.js",
+  "main": "lib/index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
     "test": "make test"
   },
-  "dependencies": {
-    "knockout": "~3.2.0",
-    "jasmine-reporters": "~0.2.1"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/One-com/knockout-transformations"
+  },
+  "peerDependencies": {
+    "knockout": "3"
   },
   "devDependencies": {
+    "knockout": "3.2.0",
+    "browserify": "8.1.3",
     "bundle-collapser": "1.1.1",
     "jscs": "1.10.0",
     "jshint": "2.6.0",
