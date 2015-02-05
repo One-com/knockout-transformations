@@ -6,22 +6,20 @@
   "directories": {
     "test": "test"
   },
+  "scripts": {
+    "test": "make test"
+  },
   "dependencies": {
     "knockout": "~3.2.0",
     "jasmine-reporters": "~0.2.1"
   },
   "devDependencies": {
-    "grunt": "~0.4.1",
-    "grunt-contrib-concat": "~0.3.0",
-    "grunt-contrib-jshint": "0.11.0",
-    "grunt-contrib-uglify": "~0.2.0",
-    "grunt-contrib-watch": "~0.4.3",
-    "grunt-jasmine-node": "~0.1.0",
-    "grunt-jscs": "1.2.0",
-    "grunt-mocha-test": "0.12.7",
-    "grunt-string-replace": "~0.2.7",
+    "bundle-collapser": "1.1.1",
+    "jscs": "1.10.0",
+    "jshint": "2.6.0",
     "mocha": "2.1.0",
     "sinon": "1.12.2",
+    "uglify-js": "2.4.16",
     "unexpected": "5.8.1",
     "unexpected-sinon": "5.0.0"
   },

@@ -1,8 +1,8 @@
-var ko = require('knockout');
-require('../lib/knockout-transformations.js');
+var ko = require('../lib/map.js');
 var expect = require('unexpected').clone()
     .installPlugin(require('unexpected-sinon'));
 var sinon = require('sinon');
+
 
 describe("Map", function () {
     var clock;
@@ -242,10 +242,14 @@ describe("Map", function () {
         epsilon = { name: 'Epsilon', age: ko.observable(104) },
         sourceArray = ko.observableArray([alpha, beta, gamma]),
         mapCallsCount = 0,
-        mappedArray = sourceArray.map(function (item, index) {
-            // Include only items with even age
-            mapCallsCount += 1;
-            return item.age() % 2 === 0 ? (index() + ': ' + item.name + ' is age ' + item.age()) : ko.transformations._exclusionMarker;
+        exclusionMarker = {},
+        mappedArray = sourceArray.map({
+            mapping: function (item, index) {
+                // Include only items with even age
+                mapCallsCount += 1;
+                return item.age() % 2 === 0 ? (index() + ': ' + item.name + ' is age ' + item.age()) : exclusionMarker;
+            },
+            exclusionMarker: exclusionMarker
         });
         expect(mappedArray(), 'to equal', ['0: Alpha is age 100', '1: Gamma is age 102']);
         expect(mapCallsCount, 'to be', 3); // All items mapped
