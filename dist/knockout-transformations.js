@@ -1,3 +1,18 @@
+/*!
+Copyright 2015 One.com
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var o;"undefined"!=typeof window?o=window:"undefined"!=typeof global?o=global:"undefined"!=typeof self&&(o=self),o.knockoutTransformations=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var ko = require(3);
 var namespace = require(5);
@@ -541,6 +556,24 @@ function getFirstModifiedOutputIndex(firstDiffEntry, arrayOfState, outputArray) 
 function respondToArrayStructuralChanges(inputObservableArray, arrayOfState, outputArray, outputObservableArray, mappingOptions) {
     return inputObservableArray.subscribe(function (diff) {
         if (!diff.length) {
+            return;
+        }
+
+        if (arrayOfState.length === 0) {
+            // Only add items
+            var newOutputItems = [];
+            ko.utils.arrayForEach(diff, function (diffEntry, i) {
+                var inputItem = diffEntry.value;
+                var stateItem = new StateItem(inputItem, i, newOutputItems.length, mappingOptions, arrayOfState, outputObservableArray);
+                var mappedValue = stateItem.mappedValueComputed.peek();
+                arrayOfState.push(stateItem);
+
+                if (stateItem.isIncluded) {
+                    newOutputItems.push(mappedValue);
+                }
+            });
+
+            outputObservableArray.push.apply(outputObservableArray, newOutputItems);
             return;
         }
 
