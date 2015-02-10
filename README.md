@@ -10,22 +10,25 @@ The project initialy started out as a fork of https://github.com/SteveSanderson/
 Installation
 ============
 
-Download a copy of `knockout-transformations-x.y.z.js` from [the `dist` directory](https://github.com/One-com/knockout-transformations/tree/master/dist) and reference it in your web application:
+Download a copy of `knockout-transformations.js` from [the `dist` directory](https://github.com/One-com/knockout-transformations/tree/master/dist) and reference it in your web application:
 
 ```html
 <!-- First reference KO itself -->
 <script src='knockout-x.y.z.js'></script>
-<!-- Then reference knockout-transformations -->
-<script src='knockout-transformations-x.y.z.js'></script>
+<!-- Then reference knockout-transformations from dist -->
+<script src='knockout-transformations.js'></script>
 ```
 
-Be sure to reference it *after* you reference Knockout itself, and of course replace `x.y.z` with the version number of the file you downloaded.
+Be sure to reference it *after* you reference Knockout itself.
 
 If you are using NPM you can install knockout and knockout-transformations the following way:
 
     npm install knockout knockout-transformations
 
 Then just reference the distribution files from `node_modules`.
+
+Using require.js you can either point to the index file in `lib` or
+use the individual transformations from located in `lib`.
 
 Usage
 =====

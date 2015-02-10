@@ -15,7 +15,10 @@ dist/knockout-transformations.js: lib/*
 	@(echo '/*!' &&\
 	  cat LICENSE &&\
 	  echo '\n*/' &&\
-	  browserify -x knockout -p bundle-collapser/plugin -e lib -s knockoutTransformations) > $@
+	  cat lib/map.js &&\
+	  cat lib/filter.js &&\
+	  cat lib/sortBy.js &&\
+	  cat lib/indexBy.js) > $@
 
 dist/knockout-transformations.min.js: dist/knockout-transformations.js
 	@(echo '/*!' &&\
