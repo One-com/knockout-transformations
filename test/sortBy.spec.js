@@ -11,7 +11,7 @@ function Person(name, yearOfBirth) {
     this.name = ko.observable(name);
     this.yearOfBirth = ko.observable(yearOfBirth);
 
-    this.isBefore1900 = ko.pureComputed(function () {
+    this.isBefore1900 = ko.computed(function () {
         return that.yearOfBirth() < 1900;
     });
 }
