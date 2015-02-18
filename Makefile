@@ -34,6 +34,7 @@ endif
 
 .PHONY: release-%
 release-%: git-dirty-check lint test dist/knockout-transformations.min.js
+	git add dist/knockout-transformations*.js && git commit -m "Build distribution files"
 	npm version $*
 	@echo $* release ready to be publised to NPM
 	@echo Remember to push tags
