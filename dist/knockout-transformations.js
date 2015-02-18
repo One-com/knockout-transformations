@@ -341,13 +341,13 @@ limitations under the License.
         // If the input array changes structurally (items added or removed), update the outputs
         var inputArraySubscription = respondToArrayStructuralChanges(that, arrayOfState, outputArray, outputObservableArray, mappingOptions);
 
-        var outputComputed = outputObservableArray;
+        var outputComputed = ko.computed(outputObservableArray);
         if ('throttle' in mappingOptions) {
-            outputComputed = ko.pureComputed(outputObservableArray).extend({ throttle: mappingOptions.throttle });
+            outputComputed = outputComputed.extend({ throttle: mappingOptions.throttle });
         }
         // Return value is a readonly computed which can track its own changes to permit chaining.
         // When disposed, it cleans up everything it created.
-        var returnValue = ko.pureComputed(outputComputed).extend({ trackArrayChanges: true }),
+        var returnValue = outputComputed.extend({ trackArrayChanges: true }),
         originalDispose = returnValue.dispose;
         returnValue.dispose = function () {
             inputArraySubscription.dispose();
@@ -625,7 +625,7 @@ limitations under the License.
         // If the input array changes structurally (items added or removed), update the outputs
         var inputArraySubscription = inputObservableArray.subscribe(this.onStructuralChange, this, 'arrayChange');
 
-        var outputComputed = ko.pureComputed(this.outputObservable);
+        var outputComputed = ko.computed(this.outputObservable);
         if ('throttle' in options) {
             outputComputed = outputComputed.extend({ throttle: options.throttle });
         }
@@ -755,7 +755,7 @@ limitations under the License.
         // If the input array changes structurally (items added or removed), update the outputs
         var inputArraySubscription = inputObservableArray.subscribe(this.onStructuralChange, this, 'arrayChange');
 
-        var outputComputed = ko.pureComputed(this.outputObservable);
+        var outputComputed = ko.computed(this.outputObservable);
         if ('throttle' in options) {
             outputComputed = outputComputed.extend({ throttle: options.throttle });
         }
