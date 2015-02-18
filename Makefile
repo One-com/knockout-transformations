@@ -11,7 +11,7 @@ lint:
 test:
 	@mocha
 
-dist/knockout-transformations.js: lib/*
+dist/knockout-transformations.js: package.json lib/*
 	@(echo '/*!' &&\
 	  cat LICENSE &&\
 	  echo '\n*/' &&\
