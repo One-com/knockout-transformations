@@ -1,6 +1,7 @@
 var ko = require('knockout');
 var expect = require('unexpected').clone()
-    .installPlugin(require('unexpected-sinon'));
+    .installPlugin(require('unexpected-sinon'))
+    .installPlugin(require('unexpected-knockout'));
 var sinon = require('sinon');
 
 require('../lib/indexBy.js');
@@ -19,6 +20,16 @@ expect.addType({
     inspect: function (value, depth, output) {
         output.text(value.yearOfBirth() + ' ' + value.name());
     }
+});
+
+
+expect.addAssertion('to contain items for key', function (expect, subject, key, itemNames) {
+    var actualNames = subject()[key].map(function (item) {
+        return item && item.name;
+    }).sort();
+    var expectedNames = [].concat(itemNames).sort();
+    this.errorMode = 'nested';
+    expect(actualNames, 'to equal', expectedNames);
 });
 
 describe("IndexBy", function () {
@@ -259,7 +270,7 @@ describe("IndexBy", function () {
         });
 
         describe('on multiple keys', function () {
-            beforeEach(function () {
+            it("indexes the array according to the given function, returning a computed map", function () {
                 indexedData = sourceArray.indexBy(function (person) {
                     return [person.name(), person.yearOfBirth()];
                 })();
@@ -272,10 +283,66 @@ describe("IndexBy", function () {
                     expectedIndex[person.yearOfBirth()] = expectedIndex[person.yearOfBirth()] || [];
                     expectedIndex[person.yearOfBirth()].push(person);
                 });
+                expect(indexedData, 'to equal', expectedIndex);
             });
 
-            it("indexes the array according to the given function, returning a computed map", function () {
-                expect(indexedData, 'to equal', expectedIndex);
+            describe('handling a many-to-many relation', function () {
+                var sampleData, sourceArray, indexedData;
+                beforeEach(function () {
+                    sampleData = [
+                        {
+                            name: 'Alpha',
+                            connections: ko.observableArray([ 1, 2, 3 ])
+                        },
+                        {
+                            name: 'Beta',
+                            connections: ko.observableArray([ 1, 3 ])
+                        },
+                        {
+                            name: 'Gamma',
+                            connections: ko.observableArray([ 2, 4 ])
+                        },
+                        {
+                            name: 'Delta',
+                            connections: ko.observableArray([ 1, 3, 4 ])
+                        }
+                    ];
+                    sourceArray = ko.observableArray(sampleData);
+                    indexedData = sourceArray.indexBy(function (item) {
+                        return item.connections();
+                    });
+                });
+
+                it('updates the array when an item is added to the source array', function () {
+                    sourceArray.push({
+                        name: 'Epsilon',
+                        connections: ko.observableArray([ 1, 4 ])
+                    });
+                    expect(indexedData, 'to contain items for key', 4, [
+                        'Gamma', 'Delta', 'Epsilon'
+                    ]);
+                });
+
+                it('updates the array when an item is deleted from the source array', function () {
+                    sourceArray.remove(sampleData[3]);
+                    expect(indexedData, 'to contain items for key', 4, [
+                        'Gamma'
+                    ]);
+                });
+
+                it('updates the array when a key is added to an item in the source array', function () {
+                    sampleData[0].connections.push(4);
+                    expect(indexedData, 'to contain items for key', 4, [
+                        'Alpha', 'Gamma', 'Delta'
+                    ]);
+                });
+
+                it('updates the array when a key is removed from an item in the source array', function () {
+                    sampleData[3].connections.remove(4);
+                    expect(indexedData, 'to contain items for key', 4, [
+                        'Gamma'
+                    ]);
+                });
             });
         });
     });
