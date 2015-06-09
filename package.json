@@ -1,6 +1,6 @@
 {
   "name": "knockout-transformations",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Live transform methods for Knockout observable arrays",
   "main": "lib/index.js",
   "directories": {
