@@ -415,4 +415,28 @@ describe("SortBy", function () {
 
         expect(sortedArray(), 'to equal', [ 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 ]);
     });
+
+    describe('with a custom comparator', function () {
+        var comparator;
+        beforeEach(function () {
+            comparator = function (a, b) {
+                // Considers numbers larger than letters
+                var aNum = parseInt(a, 10);
+                var bNum = parseInt(b, 10);
+                if (!isNaN(aNum) && isNaN(bNum)) {
+                    return 1;
+                } else if (isNaN(aNum) && !isNaN(bNum)) {
+                    return -1;
+                } else {
+                    return a > b ? 1 : a < b ? -1 : 0;
+                }
+            };
+        });
+
+        it('sorts according to the comparator', function () {
+            var sourceArray = ko.observableArray([ 0, 6, 'c', 5, 1, 3, 7, 'b', 2, 8, 9, 'a', 4 ]);
+            var sortedArray = sourceArray.sortBy({ mapping: function (item) { return item; }, comparator: comparator });
+            expect(sortedArray(), 'to equal', ['a', 'b', 'c', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        });
+    });
 });
