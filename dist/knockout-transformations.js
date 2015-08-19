@@ -434,42 +434,37 @@ limitations under the License.
         return true;
     }
 
-    function compareSortingKeys(aSortKeys, bSortKeys) {
+    function compareSortingKeys(aSortKeys, bSortKeys, comparator) {
         var Descending = SortByTransformation.Descending;
         if (!Array.isArray(aSortKeys)) {
             aSortKeys = [aSortKeys];
             bSortKeys = [bSortKeys];
         }
 
-        var aSortKey, bSortKey;
+        var aSortKey, bSortKey, comparison;
 
         for (var i = 0; i < aSortKeys.length; i += 1) {
             aSortKey = aSortKeys[i];
             bSortKey = bSortKeys[i];
             if (aSortKey instanceof Descending) {
-                if (aSortKey.value > bSortKey.value) {
-                    return -1;
-                } else if (aSortKey.value < bSortKey.value) {
-                    return 1;
-                }
+                comparison = comparator(bSortKey.value, aSortKey.value);
             } else {
-                if (aSortKey < bSortKey) {
-                    return -1;
-                } else if (aSortKey > bSortKey) {
-                    return 1;
-                }
+                comparison = comparator(aSortKey, bSortKey);
+            }
+            if (comparison !== 0) {
+                return comparison;
             }
         }
         return 0;
     }
 
     // Sorting
-    function mappingToComparefn(mapping) {
+    function mappingToComparefn(mapping, comparator) {
         var Descending = SortByTransformation.Descending;
         return function (a, b) {
             var aSortKeys = mapping(a, Descending.create);
             var bSortKeys = mapping(b, Descending.create);
-            return compareSortingKeys(aSortKeys, bSortKeys);
+            return compareSortingKeys(aSortKeys, bSortKeys, comparator);
         };
     }
 
@@ -571,7 +566,7 @@ limitations under the License.
             var stateItems = transformation.stateItems;
             var oldIndex = binaryIndexOf(stateItems, this, mappingToComparefn(function (stateItem) {
                 return stateItem.previousMappedValue;
-            }));
+            }, transformation.comparator));
 
             if (stateItems[oldIndex] === this) {
                 outputObservable.valueWillMutate();
@@ -593,7 +588,7 @@ limitations under the License.
                 // The underlying array needs to be recalculated from scratch
                 stateItems.sort(mappingToComparefn(function (stateItem) {
                     return stateItem.previousMappedValue;
-                }));
+                }, transformation.comparator));
 
                 outputArray = [];
                 ko.utils.arrayForEach(stateItems, function (stateItem) {
@@ -609,13 +604,26 @@ limitations under the License.
         this.options = options;
 
         this.mapping = options.mapping;
-        this.comparefn = mappingToComparefn(this.mapping);
+        if (options.comparator) {
+            this.comparator = options.comparator;
+        } else {
+            this.comparator = function (a, b) {
+                if (a > b) {
+                    return 1;
+                } else if (b > a) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            };
+        }
+        this.comparefn = mappingToComparefn(this.mapping, this.comparator);
 
         this.stateItems = ko.utils.arrayMap(inputObservableArray.peek(), function (inputItem) {
             return new SortedStateItem(that, inputItem);
         });
         this.stateItems.sort(function (a, b) {
-            return compareSortingKeys(a.mappedValueComputed(), b.mappedValueComputed());
+            return compareSortingKeys(a.mappedValueComputed(), b.mappedValueComputed(), that.comparator);
         });
 
         this.outputObservable = ko.observable(ko.utils.arrayMap(this.stateItems, function (stateItem) {
@@ -693,7 +701,7 @@ limitations under the License.
             });
 
             this.stateItems.sort(function (a, b) {
-                return compareSortingKeys(a.mappedValueComputed(), b.mappedValueComputed());
+                return compareSortingKeys(a.mappedValueComputed(), b.mappedValueComputed(), that.comparator);
             });
 
             ko.utils.arrayForEach(this.stateItems, function (stateItem) {
