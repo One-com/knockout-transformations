@@ -932,15 +932,28 @@ limitations under the License.
         return this.transformation.mapping(this.inputItem);
     };
 
+    function toArray(value) {
+        return Array.isArray(value) ? value : [value];
+    }
+
     IndexedStateItem.prototype.onMappingResultChanged = function (newValue) {
         var transformation = this.transformation;
         if (!transformation.arraysEqual(this.newValue, this.previousMappedValue)) {
             var outputObservable = transformation.outputObservable;
             var output = outputObservable.peek();
             outputObservable.valueWillMutate();
-            transformation.removeByKeyAndItem(output, this.previousMappedValue, this.inputItem);
-            transformation.removeByKeyAndItem(transformation.stateItems, this.previousMappedValue, this);
-            transformation.insertByKeyAndItem(output, newValue, this.inputItem);
+
+            var that = this;
+            ko.utils.arrayForEach(toArray(this.previousMappedValue), function (key) {
+                transformation.removeByKeyAndItem(output, key, that.inputItem);
+                transformation.removeByKeyAndItem(transformation.stateItems, key, that);
+            });
+
+
+            ko.utils.arrayForEach(toArray(newValue), function (key) {
+                transformation.insertByKeyAndItem(output, key, that.inputItem);
+            });
+
             transformation.addStateItemToIndex(this);
             this.previousMappedValue = newValue;
             outputObservable.valueHasMutated();
